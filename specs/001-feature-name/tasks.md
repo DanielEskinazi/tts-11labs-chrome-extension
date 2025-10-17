@@ -113,10 +113,10 @@
 - [X] T032 [P] Verify input sanitization - confirm textContent usage instead of innerHTML in popup.js
 - [X] T033 Code review for error handling - ensure all chrome.storage calls check chrome.runtime.lastError
 - [X] T034 Performance validation - verify popup loads in < 1 second, input validation feedback in < 500ms
-- [ ] T035 Manual testing via chrome://extensions load unpacked - verify all acceptance scenarios from spec.md
+- [X] T035 Manual testing via chrome://extensions load unpacked - verify all acceptance scenarios from spec.md
 - [X] T036 [P] Edge case testing - whitespace trimming, empty input validation, persistence after restart
 - [X] T037 Size validation - confirm total extension size < 5MB, individual files < 500KB
-- [ ] T038 Run quickstart.md validation - follow quickstart guide to verify all steps work correctly
+- [X] T038 Run quickstart.md validation - follow quickstart guide to verify all steps work correctly
 
 ---
 

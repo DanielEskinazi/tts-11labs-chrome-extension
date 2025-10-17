@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ElevenLabs Reader Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ElevenLabs Reader</h1>
+      <p id="status-message" class="status">Checking configuration...</p>
+    </header>
+
+    <main>
+      <form id="api-key-form">
+        <div class="form-group">
+          <label for="api-key-input">API Key</label>
+          <input
+            type="text"
+            id="api-key-input"
+            placeholder="Enter your ElevenLabs API key"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <small class="help-text">
+            Get your API key from
+            <a href="https://elevenlabs.io/subscription" target="_blank">ElevenLabs</a>
+          </small>
+          <p id="error-message" class="error hidden"></p>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" id="save-button">Save API Key</button>
+          <button type="button" id="clear-button" class="secondary">Clear</button>
+        </div>
+      </form>
+    </main>
+
+    <footer>
+      <p class="version">Version 1.0.0</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

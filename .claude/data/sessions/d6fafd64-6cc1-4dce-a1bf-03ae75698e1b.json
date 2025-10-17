@@ -3,6 +3,12 @@
   "prompts": [
     "/speckit.plan ",
     "/speckit.plan ",
-    "done"
-  ]
+    "done",
+    "/speckit.specify ",
+    "/speckit.implement ",
+    "/speckit.plan ",
+    "/speckit.tasks ",
+    "/speckit.tasks "
+  ],
+  "agent_name": "Nova"
 }

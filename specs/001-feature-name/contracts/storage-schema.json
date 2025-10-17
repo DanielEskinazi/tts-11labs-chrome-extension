@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ElevenLabs TTS Extension - Storage Schema",
+  "description": "JSON Schema for chrome.storage.local data structure (Phase 1: Basic Setup)",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "elevenlabs_api_key_config": {
+      "type": "object",
+      "description": "API Key Configuration Entity",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "description": "ElevenLabs API key (32-character hexadecimal string)",
+          "pattern": "^[a-fA-F0-9]{32}$",
+          "minLength": 32,
+          "maxLength": 32,
+          "examples": [
+            "a1b2c3d4e5f6789012345678901234567"
+          ]
+        },
+        "createdAt": {
+          "type": "integer",
+          "description": "Unix timestamp in milliseconds when API key was first saved",
+          "minimum": 0,
+          "examples": [
+            1697500000000
+          ]
+        },
+        "updatedAt": {
+          "type": "integer",
+          "description": "Unix timestamp in milliseconds when API key was last updated",
+          "minimum": 0,
+          "examples": [
+            1697500000000
+          ]
+        }
+      },
+      "required": ["apiKey", "createdAt", "updatedAt"],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "elevenlabs_api_key_config": {
+        "apiKey": "a1b2c3d4e5f6789012345678901234567",
+        "createdAt": 1697500000000,
+        "updatedAt": 1697500000000
+      }
+    }
+  ],
+  "definitions": {
+    "timestamp": {
+      "type": "integer",
+      "description": "Unix timestamp in milliseconds",
+      "minimum": 0
+    },
+    "apiKeyFormat": {
+      "type": "string",
+      "description": "32-character hexadecimal string",
+      "pattern": "^[a-fA-F0-9]{32}$"
+    }
+  }
+}

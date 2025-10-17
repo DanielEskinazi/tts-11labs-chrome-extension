@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ElevenLabs TTS Extension - Manifest V3 Specification",
+  "description": "Chrome Extension Manifest V3 configuration contract for Phase 1",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "manifest_version",
+    "name",
+    "version",
+    "description",
+    "permissions",
+    "action",
+    "icons"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "integer",
+      "const": 3,
+      "description": "Manifest version (MUST be 3 for Manifest V3)"
+    },
+    "name": {
+      "type": "string",
+      "const": "ElevenLabs Reader",
+      "description": "Extension name displayed to users"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Extension version (semantic versioning)",
+      "examples": ["1.0.0"]
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 132,
+      "description": "Short description of extension (max 132 characters)",
+      "examples": ["Convert text to speech using ElevenLabs AI voices"]
+    },
+    "permissions": {
+      "type": "array",
+      "description": "Required permissions for extension",
+      "contains": {
+        "const": "storage"
+      },
+      "items": {
+        "type": "string",
+        "enum": ["storage"]
+      },
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true
+    },
+    "action": {
+      "type": "object",
+      "description": "Extension action (popup) configuration",
+      "required": ["default_popup"],
+      "properties": {
+        "default_popup": {
+          "type": "string",
+          "const": "popup.html",
+          "description": "Path to popup HTML file"
+        },
+        "default_title": {
+          "type": "string",
+          "description": "Tooltip text for extension icon",
+          "examples": ["ElevenLabs Reader"]
+        }
+      }
+    },
+    "icons": {
+      "type": "object",
+      "description": "Extension icon files at multiple sizes",
+      "required": ["16", "48", "128"],
+      "properties": {
+        "16": {
+          "type": "string",
+          "const": "icons/icon16.png",
+          "description": "16x16 icon (toolbar)"
+        },
+        "48": {
+          "type": "string",
+          "const": "icons/icon48.png",
+          "description": "48x48 icon (extension management)"
+        },
+        "128": {
+          "type": "string",
+          "const": "icons/icon128.png",
+          "description": "128x128 icon (Chrome Web Store)"
+        }
+      }
+    }
+  },
+  "example": {
+    "manifest_version": 3,
+    "name": "ElevenLabs Reader",
+    "version": "1.0.0",
+    "description": "Convert text to speech using ElevenLabs AI voices",
+    "permissions": ["storage"],
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "ElevenLabs Reader"
+    },
+    "icons": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}

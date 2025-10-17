@@ -1,105 +1,108 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Basic Extension Setup
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Branch**: `001-feature-name` | **Date**: 2025-10-17 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/001-feature-name/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Implement Phase 1 of the ElevenLabs TTS Chrome Extension: a foundational Manifest V3 extension with popup UI for API key management, secure storage using chrome.storage.local, input validation, and proper iconography. This phase establishes the core infrastructure without TTS functionality, enabling users to install and configure the extension.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: JavaScript ES2020+ (Chrome extension runtime environment)
+**Primary Dependencies**: None (vanilla JavaScript, uses built-in Chrome APIs only)
+**Storage**: chrome.storage.local API for API key persistence
+**Testing**: Manual testing in Chrome browser (chrome://extensions load unpacked)
+**Target Platform**: Chrome 88+ (Manifest V3 minimum requirement)
+**Project Type**: Chrome Extension (browser extension with popup UI)
+**Performance Goals**: Popup load < 1 second, input validation feedback < 500ms
+**Constraints**: Manifest V3 compliance (NON-NEGOTIABLE), no inline scripts (CSP), < 5MB total size, < 500KB per file
+**Scale/Scope**: Single-user local installation, minimal permissions (storage only), 3 HTML/JS/CSS files + manifest + icons
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### Phase-First Development (Principle I)
+
+**Status**: ✅ COMPLIANT
+
+- This is Phase 1 (Basic Setup) - no prior phases exist
+- Phase is fully self-contained: manifest, popup, storage, icons
+- No Phase 2 features (content scripts, context menus) are included
+- Testing checkpoint defined: extension loads, popup works, storage persists
+
+### Manifest V3 Compliance (Principle II - NON-NEGOTIABLE)
+
+**Status**: ✅ COMPLIANT
+
+- Using Manifest V3 structure (manifest_version: 3)
+- No background scripts needed in Phase 1 (only popup)
+- Using chrome.storage.local (not localStorage)
+- No inline scripts (CSP compliant HTML/JS separation)
+- Minimal permissions: only "storage" requested
+
+### Security & Privacy First (Principle III)
+
+**Status**: ✅ COMPLIANT
+
+- API key stored in chrome.storage.local only
+- No hardcoded API keys in source code
+- Input sanitization implemented (XSS prevention)
+- API key masked in UI for privacy
+- No network calls in Phase 1 (API verification is Phase 2/3)
+
+### Chrome Extension Best Practices (Principle IV)
+
+**Status**: ✅ COMPLIANT
+
+- Popup handles UI and settings (appropriate for Phase 1)
+- No content scripts or background workers (not needed yet)
+- Future phases will add: content scripts (Phase 2), background worker (Phase 3)
+- Extension size well under 5MB limit (estimated < 100KB total)
+
+### Testing Before Proceeding (Principle V)
+
+**Status**: ✅ COMPLIANT
+
+- Manual testing plan defined for Phase 1
+- Test scenarios: install, popup open, API key save/retrieve, validation, persistence
+- Chrome://extensions load unpacked testing approach
+- No automated testing in Phase 1 (manual validation sufficient)
+
+**GATE RESULT**: ✅ PASS - All principles satisfied, no violations
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```
-specs/[###-feature]/
+specs/001-feature-name/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
 ├── quickstart.md        # Phase 1 output (/speckit.plan command)
 ├── contracts/           # Phase 1 output (/speckit.plan command)
+│   └── storage-schema.json  # Chrome storage schema
 └── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+/
+├── manifest.json        # Manifest V3 configuration
+├── popup.html           # Popup UI structure
+├── popup.js             # Popup logic and chrome.storage interaction
+├── popup.css            # Popup styling
+└── icons/               # Extension icons
+    ├── icon16.png       # Toolbar icon
+    ├── icon48.png       # Extension management icon
+    └── icon128.png      # Chrome Web Store icon
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Single project structure (Option 1) selected as this is a browser extension with no backend/frontend separation. All files reside at repository root per Chrome extension conventions. Future phases will add `background.js` (service worker) and `content.js` (content script) to root directory.
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
-
+*No constitution violations - this section is empty*

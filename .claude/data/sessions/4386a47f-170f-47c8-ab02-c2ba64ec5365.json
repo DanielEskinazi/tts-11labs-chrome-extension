@@ -1,0 +1,8 @@
+{
+  "session_id": "4386a47f-170f-47c8-ab02-c2ba64ec5365",
+  "prompts": [
+    "when i added my api key which i have in this .env. i got this error Invalid API key format. Expected 32-character hexadecimal string.\n\n",
+    "[Image #1]"
+  ],
+  "agent_name": "Nexus"
+}

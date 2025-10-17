@@ -22,8 +22,8 @@
 
 **Purpose**: Project initialization and basic structure for Chrome extension
 
-- [ ] T001 Create project directory structure: icons/ folder at repository root
-- [ ] T002 Create placeholder files: manifest.json, popup.html, popup.js, popup.css at repository root
+- [X] T001 Create project directory structure: icons/ folder at repository root
+- [X] T002 Create placeholder files: manifest.json, popup.html, popup.js, popup.css at repository root
 
 ---
 
@@ -33,10 +33,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until manifest.json is configured
 
-- [ ] T003 Implement Manifest V3 configuration in manifest.json per contracts/manifest-spec.json
-- [ ] T004 Configure extension permissions (storage only) in manifest.json
-- [ ] T005 Configure action.default_popup to point to popup.html in manifest.json
-- [ ] T006 Define icon paths (16x16, 48x48, 128x128) in manifest.json
+- [X] T003 Implement Manifest V3 configuration in manifest.json per contracts/manifest-spec.json
+- [X] T004 Configure extension permissions (storage only) in manifest.json
+- [X] T005 Configure action.default_popup to point to popup.html in manifest.json
+- [X] T006 Define icon paths (16x16, 48x48, 128x128) in manifest.json
 
 **Checkpoint**: Manifest V3 foundation ready - user story implementation can now begin
 
@@ -50,19 +50,19 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Create popup HTML structure in popup.html with form, input field, status message, save/clear buttons
-- [ ] T008 [P] [US1] Implement popup styling in popup.css with professional design, form layout, button styles, status colors
-- [ ] T009 [US1] Implement DOM element references and constants in popup.js (STORAGE_KEY, API_KEY_REGEX)
-- [ ] T010 [US1] Implement loadApiKey() function in popup.js to retrieve config from chrome.storage.local
-- [ ] T011 [US1] Implement validateApiKey() function in popup.js with regex /^[a-fA-F0-9]{32}$/ and whitespace trimming
-- [ ] T012 [US1] Implement maskApiKey() function in popup.js to show dots + last 4 characters
-- [ ] T013 [US1] Implement saveApiKey() function in popup.js with validation, chrome.storage.local.set, timestamp handling (createdAt/updatedAt)
-- [ ] T014 [US1] Implement clearApiKey() function in popup.js with chrome.storage.local.remove
-- [ ] T015 [US1] Add form submit event listener in popup.js to call saveApiKey()
-- [ ] T016 [US1] Add clear button event listener in popup.js to call clearApiKey()
-- [ ] T017 [US1] Add DOMContentLoaded event listener in popup.js to call loadApiKey() on popup open
-- [ ] T018 [US1] Implement error handling for chrome.runtime.lastError in all chrome.storage callbacks in popup.js
-- [ ] T019 [US1] Implement showError() and hideError() helper functions in popup.js for user-friendly error messages
+- [X] T007 [P] [US1] Create popup HTML structure in popup.html with form, input field, status message, save/clear buttons
+- [X] T008 [P] [US1] Implement popup styling in popup.css with professional design, form layout, button styles, status colors
+- [X] T009 [US1] Implement DOM element references and constants in popup.js (STORAGE_KEY, API_KEY_REGEX)
+- [X] T010 [US1] Implement loadApiKey() function in popup.js to retrieve config from chrome.storage.local
+- [X] T011 [US1] Implement validateApiKey() function in popup.js with regex /^[a-fA-F0-9]{32}$/ and whitespace trimming
+- [X] T012 [US1] Implement maskApiKey() function in popup.js to show dots + last 4 characters
+- [X] T013 [US1] Implement saveApiKey() function in popup.js with validation, chrome.storage.local.set, timestamp handling (createdAt/updatedAt)
+- [X] T014 [US1] Implement clearApiKey() function in popup.js with chrome.storage.local.remove
+- [X] T015 [US1] Add form submit event listener in popup.js to call saveApiKey()
+- [X] T016 [US1] Add clear button event listener in popup.js to call clearApiKey()
+- [X] T017 [US1] Add DOMContentLoaded event listener in popup.js to call loadApiKey() on popup open
+- [X] T018 [US1] Implement error handling for chrome.runtime.lastError in all chrome.storage callbacks in popup.js
+- [X] T019 [US1] Implement showError() and hideError() helper functions in popup.js for user-friendly error messages
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can install, save API keys, view masked keys, and verify persistence across sessions.
 
@@ -76,12 +76,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement updateStatus() function in popup.js to set status message and CSS classes based on configuration state
-- [ ] T021 [US2] Add status CSS classes (.configured, .not-configured) in popup.css with appropriate colors (green/red)
-- [ ] T022 [US2] Update loadApiKey() in popup.js to call updateStatus(true) when key exists, updateStatus(false) when missing
-- [ ] T023 [US2] Update saveApiKey() in popup.js to call updateStatus(true) after successful save
-- [ ] T024 [US2] Update clearApiKey() in popup.js to call updateStatus(false) after successful removal
-- [ ] T025 [US2] Add help text in popup.html with link to ElevenLabs subscription page for API key acquisition
+- [X] T020 [US2] Implement updateStatus() function in popup.js to set status message and CSS classes based on configuration state
+- [X] T021 [US2] Add status CSS classes (.configured, .not-configured) in popup.css with appropriate colors (green/red)
+- [X] T022 [US2] Update loadApiKey() in popup.js to call updateStatus(true) when key exists, updateStatus(false) when missing
+- [X] T023 [US2] Update saveApiKey() in popup.js to call updateStatus(true) after successful save
+- [X] T024 [US2] Update clearApiKey() in popup.js to call updateStatus(false) after successful removal
+- [X] T025 [US2] Add help text in popup.html with link to ElevenLabs subscription page for API key acquisition
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently - full API key management with clear status feedback.
 
@@ -95,11 +95,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create or generate 16x16 icon in icons/icon16.png (toolbar icon)
-- [ ] T027 [P] [US3] Create or generate 48x48 icon in icons/icon48.png (extension management icon)
-- [ ] T028 [P] [US3] Create or generate 128x128 icon in icons/icon128.png (Chrome Web Store icon)
-- [ ] T029 [US3] Add header branding element in popup.html with consistent styling
-- [ ] T030 [US3] Style header branding in popup.css to match extension identity
+- [X] T026 [P] [US3] Create or generate 16x16 icon in icons/icon16.png (toolbar icon)
+- [X] T027 [P] [US3] Create or generate 48x48 icon in icons/icon48.png (extension management icon)
+- [X] T028 [P] [US3] Create or generate 128x128 icon in icons/icon128.png (Chrome Web Store icon)
+- [X] T029 [US3] Add header branding element in popup.html with consistent styling
+- [X] T030 [US3] Style header branding in popup.css to match extension identity
 
 **Checkpoint**: All user stories should now be independently functional - complete Phase 1 extension with installation, configuration, status, and branding.
 
@@ -109,13 +109,13 @@
 
 **Purpose**: Improvements that affect multiple user stories and final validation
 
-- [ ] T031 [P] Add CSP compliance validation - ensure no inline scripts in popup.html
-- [ ] T032 [P] Verify input sanitization - confirm textContent usage instead of innerHTML in popup.js
-- [ ] T033 Code review for error handling - ensure all chrome.storage calls check chrome.runtime.lastError
-- [ ] T034 Performance validation - verify popup loads in < 1 second, input validation feedback in < 500ms
+- [X] T031 [P] Add CSP compliance validation - ensure no inline scripts in popup.html
+- [X] T032 [P] Verify input sanitization - confirm textContent usage instead of innerHTML in popup.js
+- [X] T033 Code review for error handling - ensure all chrome.storage calls check chrome.runtime.lastError
+- [X] T034 Performance validation - verify popup loads in < 1 second, input validation feedback in < 500ms
 - [ ] T035 Manual testing via chrome://extensions load unpacked - verify all acceptance scenarios from spec.md
-- [ ] T036 [P] Edge case testing - whitespace trimming, empty input validation, persistence after restart
-- [ ] T037 Size validation - confirm total extension size < 5MB, individual files < 500KB
+- [X] T036 [P] Edge case testing - whitespace trimming, empty input validation, persistence after restart
+- [X] T037 Size validation - confirm total extension size < 5MB, individual files < 500KB
 - [ ] T038 Run quickstart.md validation - follow quickstart guide to verify all steps work correctly
 
 ---

@@ -11,12 +11,12 @@
       "properties": {
         "apiKey": {
           "type": "string",
-          "description": "ElevenLabs API key (32-character hexadecimal string)",
-          "pattern": "^[a-fA-F0-9]{32}$",
-          "minLength": 32,
-          "maxLength": 32,
+          "description": "ElevenLabs API key (64-character hexadecimal string)",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "minLength": 64,
+          "maxLength": 64,
           "examples": [
-            "a1b2c3d4e5f6789012345678901234567"
+            "fdf15a7446ffbcc9fffa7879fe4db77f7dde506da4fd8af161163afa3d506fdb"
           ]
         },
         "createdAt": {
@@ -44,7 +44,7 @@
   "examples": [
     {
       "elevenlabs_api_key_config": {
-        "apiKey": "a1b2c3d4e5f6789012345678901234567",
+        "apiKey": "fdf15a7446ffbcc9fffa7879fe4db77f7dde506da4fd8af161163afa3d506fdb",
         "createdAt": 1697500000000,
         "updatedAt": 1697500000000
       }
@@ -58,8 +58,8 @@
     },
     "apiKeyFormat": {
       "type": "string",
-      "description": "32-character hexadecimal string",
-      "pattern": "^[a-fA-F0-9]{32}$"
+      "description": "64-character hexadecimal string",
+      "pattern": "^[a-fA-F0-9]{64}$"
     }
   }
 }

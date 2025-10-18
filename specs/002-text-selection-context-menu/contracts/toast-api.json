@@ -1,0 +1,282 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tts-11labs-chrome-extension/toast-api.json",
+  "title": "Toast Notification API Contract",
+  "description": "API contract for toast notification functions in the ElevenLabs TTS Chrome Extension (Phase 2: Text Selection and Context Menu Integration)",
+  "version": "1.0.0",
+  "definitions": {
+    "ToastConfig": {
+      "type": "object",
+      "description": "Configuration object for creating a toast notification",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The text content to display in the toast. Will be HTML-escaped automatically.",
+          "minLength": 1,
+          "maxLength": 200,
+          "examples": [
+            "Text captured: The quick brown fox jumps...",
+            "Text is very long (8,450 chars), this may take a while",
+            "Failed to capture text. Please try again."
+          ]
+        },
+        "type": {
+          "type": "string",
+          "description": "Toast type for visual styling. Affects background color.",
+          "enum": ["success", "warning", "error"],
+          "default": "success",
+          "examples": ["success", "warning", "error"]
+        },
+        "duration": {
+          "type": "integer",
+          "description": "How long to display the toast in milliseconds before auto-removing",
+          "minimum": 1000,
+          "maximum": 10000,
+          "default": 3000,
+          "examples": [3000, 5000]
+        },
+        "position": {
+          "type": "string",
+          "description": "Screen position where toast should appear",
+          "enum": ["top-right", "top-left", "bottom-right", "bottom-left", "top-center", "bottom-center"],
+          "default": "top-right"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToastElement": {
+      "type": "object",
+      "description": "Return type of showToast function. Represents the toast container element with shadow root.",
+      "properties": {
+        "container": {
+          "description": "The host element for the shadow DOM (HTMLDivElement)",
+          "type": "object"
+        },
+        "remove": {
+          "description": "Method to manually remove the toast before duration expires",
+          "type": "function"
+        }
+      }
+    }
+  },
+  "api": {
+    "functions": [
+      {
+        "name": "showToast",
+        "description": "Creates and displays a toast notification with the specified configuration. The toast is injected into the page DOM using Shadow DOM for style isolation and automatically removed after the specified duration.",
+        "signature": "function showToast(config: ToastConfig): ToastElement",
+        "parameters": [
+          {
+            "name": "config",
+            "type": "ToastConfig",
+            "required": true,
+            "description": "Configuration object for the toast notification"
+          }
+        ],
+        "returns": {
+          "type": "ToastElement",
+          "description": "An object containing the toast container element and a remove method for manual cleanup"
+        },
+        "throws": [
+          {
+            "type": "Error",
+            "condition": "config.message is empty or missing",
+            "message": "Toast message is required and must not be empty"
+          },
+          {
+            "type": "Error",
+            "condition": "document.body is not available",
+            "message": "Cannot show toast: document.body is not available"
+          }
+        ],
+        "sideEffects": [
+          "Creates a new div element and appends it to document.body",
+          "Creates a shadow root in closed mode",
+          "Sets a timeout to automatically remove the toast after duration",
+          "HTML-escapes the message to prevent XSS"
+        ],
+        "performance": {
+          "shadowDomCreation": "~1-2ms",
+          "totalOverhead": "~2-5ms",
+          "memoryFootprint": "<100KB per toast"
+        },
+        "examples": [
+          {
+            "description": "Show success toast with default duration (3 seconds)",
+            "code": "showToast({\n  message: 'Text captured: The quick brown fox jumps...',\n  type: 'success'\n});"
+          },
+          {
+            "description": "Show warning toast for long text",
+            "code": "showToast({\n  message: 'Text is very long (8,450 chars), this may take a while',\n  type: 'warning',\n  duration: 5000\n});"
+          },
+          {
+            "description": "Show error toast with manual removal",
+            "code": "const toast = showToast({\n  message: 'Failed to capture text. Please try again.',\n  type: 'error'\n});\n\n// Manually remove toast after 2 seconds\nsetTimeout(() => {\n  toast.remove();\n}, 2000);"
+          }
+        ],
+        "implementation": {
+          "location": "content.js",
+          "dependencies": ["toast.css (injected into shadow root)"],
+          "browserAPIs": ["document.createElement", "Element.attachShadow", "document.body.appendChild"],
+          "testing": "Manual testing in Chrome browser on 10+ websites"
+        }
+      },
+      {
+        "name": "removeToast",
+        "description": "Manually removes a toast notification from the DOM before its duration expires. This is useful for programmatically dismissing toasts (e.g., when user navigates away from page).",
+        "signature": "function removeToast(toastElement: ToastElement): void",
+        "parameters": [
+          {
+            "name": "toastElement",
+            "type": "ToastElement",
+            "required": true,
+            "description": "The toast element returned by showToast()"
+          }
+        ],
+        "returns": {
+          "type": "void",
+          "description": "No return value"
+        },
+        "throws": [
+          {
+            "type": "Error",
+            "condition": "toastElement is null or invalid",
+            "message": "Invalid toast element"
+          }
+        ],
+        "sideEffects": [
+          "Removes the toast container from document.body",
+          "Clears any pending timeout for auto-removal",
+          "Shadow root is automatically cleaned up when container is removed"
+        ],
+        "examples": [
+          {
+            "description": "Remove toast immediately",
+            "code": "const toast = showToast({ message: 'Processing...', type: 'success' });\n\n// Remove immediately when processing completes\nprocessData().then(() => {\n  removeToast(toast);\n});"
+          }
+        ],
+        "implementation": {
+          "location": "content.js",
+          "note": "In practice, toastElement.remove() can be called directly. This function is provided for API completeness."
+        }
+      }
+    ]
+  },
+  "styling": {
+    "description": "Toast notifications are styled using CSS injected into the shadow root. This ensures complete isolation from page styles.",
+    "cssFile": "toast.css",
+    "injectionMethod": "Inline in shadow root innerHTML",
+    "styleVariables": {
+      "successBackground": "#10b981 (Tailwind green-500)",
+      "warningBackground": "#f59e0b (Tailwind yellow-500)",
+      "errorBackground": "#ef4444 (Tailwind red-500)",
+      "textColor": "#ffffff (white)",
+      "padding": "16px 24px",
+      "borderRadius": "8px",
+      "fontSize": "14px",
+      "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+      "zIndex": "2147483647 (max int32)",
+      "boxShadow": "0 4px 6px rgba(0, 0, 0, 0.1)",
+      "maxWidth": "400px"
+    },
+    "animations": {
+      "slideIn": {
+        "duration": "0.3s",
+        "easing": "ease-out",
+        "from": "translateX(100%), opacity: 0",
+        "to": "translateX(0), opacity: 1"
+      }
+    },
+    "positioning": {
+      "position": "fixed",
+      "top": "20px (for top-* positions)",
+      "right": "20px (for *-right positions)",
+      "bottom": "20px (for bottom-* positions)",
+      "left": "20px (for *-left positions)"
+    }
+  },
+  "accessibility": {
+    "ariaAttributes": {
+      "role": "alert",
+      "aria-live": "polite"
+    },
+    "screenReaderSupport": "Toast content is announced by screen readers due to role='alert' and aria-live='polite'",
+    "visualContrast": "High contrast white text on colored backgrounds (WCAG AA compliant)",
+    "timing": "3-second duration provides adequate time to read short messages"
+  },
+  "security": {
+    "xssPrevention": "All message content is HTML-escaped using textContent assignment before display",
+    "shadowDomMode": "closed (prevents page JavaScript from accessing shadow root)",
+    "cspCompliance": "Inline styles in shadow root do not violate Content Security Policy"
+  },
+  "browserCompatibility": {
+    "chrome": "88+ (Manifest V3 requirement)",
+    "edge": "88+ (Chromium-based)",
+    "firefox": "Not supported (different extension model)",
+    "safari": "Not supported (different extension model)"
+  },
+  "limitations": {
+    "maxToastsAtOnce": "No limit enforced in Phase 2. Multiple toasts will stack vertically.",
+    "queueing": "Not implemented in Phase 2. New toast appears immediately regardless of existing toasts.",
+    "userDismissal": "Not implemented in Phase 2. Toasts auto-remove after duration; no close button.",
+    "persistence": "Toasts are not persisted. Removed if page reloads or navigates.",
+    "customization": "Position and duration can be configured, but colors are fixed per type in Phase 2."
+  },
+  "testing": {
+    "unit": [
+      "Verify HTML escaping prevents XSS",
+      "Verify default values are applied when not specified",
+      "Verify toast auto-removes after duration",
+      "Verify manual removal works correctly"
+    ],
+    "integration": [
+      "Verify toast appears on all test websites (10+)",
+      "Verify page styles don't affect toast appearance",
+      "Verify toast appears above all page content (z-index)",
+      "Verify no console errors on sites with CSP"
+    ],
+    "accessibility": [
+      "Verify screen reader announces toast (test with NVDA/VoiceOver)",
+      "Verify sufficient contrast for readability",
+      "Verify keyboard focus is not stolen by toast"
+    ]
+  },
+  "futureEnhancements": {
+    "phase3": [
+      "Add close button for manual dismissal",
+      "Add toast queue (show one at a time)",
+      "Add progress indicator for long-running operations"
+    ],
+    "phase4": [
+      "Add custom positioning (follow cursor, etc.)",
+      "Add animation options (fade, bounce, etc.)",
+      "Add sound effects (optional)"
+    ]
+  },
+  "examples": [
+    {
+      "scenario": "Phase 2: Text capture success",
+      "usage": "showToast({\n  message: `Text captured: ${text.substring(0, 30)}...`,\n  type: 'success'\n});"
+    },
+    {
+      "scenario": "Phase 2: Long text warning",
+      "usage": "if (text.length > 5000) {\n  showToast({\n    message: `Text is very long (${text.length} chars), this may take a while`,\n    type: 'warning',\n    duration: 5000\n  });\n}"
+    },
+    {
+      "scenario": "Phase 2: Error handling",
+      "usage": "showToast({\n  message: 'Failed to capture text. Please try again.',\n  type: 'error'\n});"
+    },
+    {
+      "scenario": "Phase 3: TTS API call in progress",
+      "usage": "const toast = showToast({\n  message: 'Converting text to speech...',\n  type: 'success',\n  duration: 10000\n});\n\n// Remove when API call completes\nawait callTTSAPI(text);\ntoast.remove();"
+    }
+  ],
+  "notes": {
+    "implementation": "content.js implements showToast() and removeToast(). toast.css is injected into manifest.json content_scripts.",
+    "messageFlow": "Service worker sends SHOW_TOAST message → Content script calls showToast()",
+    "cleanup": "Toasts are automatically cleaned up after duration. No memory leaks expected.",
+    "performance": "Shadow DOM overhead is minimal (~2ms). No impact on page performance.",
+    "testing": "Manual testing on 10+ popular websites ensures cross-site compatibility."
+  }
+}

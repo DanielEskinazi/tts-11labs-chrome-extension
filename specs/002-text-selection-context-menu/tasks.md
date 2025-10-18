@@ -22,11 +22,11 @@
 
 **Purpose**: Update manifest.json with Phase 2 permissions and file references
 
-- [ ] T001 Update manifest.json version from 1.0.0 to 1.1.0
-- [ ] T002 Add new permissions to manifest.json: contextMenus, activeTab, scripting
-- [ ] T003 Add host_permissions to manifest.json for all HTTP/HTTPS pages: ["http://*/*", "https://*/*"]
-- [ ] T004 Add background service worker configuration to manifest.json pointing to background.js
-- [ ] T005 Add content_scripts configuration to manifest.json with matches: ["<all_urls>"], js: ["content.js"], css: ["toast.css"], run_at: "document_idle", all_frames: false
+- [X] T001 Update manifest.json version from 1.0.0 to 1.1.0
+- [X] T002 Add new permissions to manifest.json: contextMenus, activeTab, scripting
+- [X] T003 Add host_permissions to manifest.json for all HTTP/HTTPS pages: ["http://*/*", "https://*/*"]
+- [X] T004 Add background service worker configuration to manifest.json pointing to background.js
+- [X] T005 Add content_scripts configuration to manifest.json with matches: ["<all_urls>"], js: ["content.js"], css: ["toast.css"], run_at: "document_idle", all_frames: false
 
 ---
 
@@ -36,10 +36,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Create toast.css with base toast styles (position: fixed, top: 20px, right: 20px, z-index: 2147483647)
-- [ ] T007 Add toast type variants to toast.css (success: #10b981, warning: #f59e0b, error: #ef4444)
-- [ ] T008 Add slideIn animation to toast.css (translateX(100%) to translateX(0) over 0.3s ease-out)
-- [ ] T009 Add accessibility styles to toast.css (focus outline, system fonts, ARIA-compatible)
+- [X] T006 Create toast.css with base toast styles (position: fixed, top: 20px, right: 20px, z-index: 2147483647)
+- [X] T007 Add toast type variants to toast.css (success: #10b981, warning: #f59e0b, error: #ef4444)
+- [X] T008 Add slideIn animation to toast.css (translateX(100%) to translateX(0) over 0.3s ease-out)
+- [X] T009 Add accessibility styles to toast.css (focus outline, system fonts, ARIA-compatible)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -55,31 +55,31 @@
 
 **Background Service Worker (background.js)**
 
-- [ ] T010 [US1] Create background.js with in-memory cache variable for captured text (capturedTextCache = null)
-- [ ] T011 [US1] Implement chrome.runtime.onInstalled listener in background.js to create context menu with id: "read-with-elevenlabs", title: "Read with ElevenLabs", contexts: ["selection"], documentUrlPatterns: ["http://*/*", "https://*/*"]
-- [ ] T012 [US1] Implement chrome.contextMenus.onClicked listener in background.js to handle context menu clicks and send CAPTURE_TEXT message to active tab via chrome.tabs.sendMessage
-- [ ] T013 [US1] Implement chrome.runtime.onMessage listener in background.js to receive TEXT_CAPTURED messages from content script
-- [ ] T014 [US1] Implement handleTextCaptured function in background.js to store captured text in capturedTextCache and chrome.storage.session with key "lastCapturedText"
-- [ ] T015 [US1] Add logic to handleTextCaptured in background.js to determine toast type (success for text <5000 chars, warning for text >5000 chars)
-- [ ] T016 [US1] Add logic to handleTextCaptured in background.js to generate toast message with text preview (first 30 chars + "..." if truncated)
-- [ ] T017 [US1] Send SHOW_TOAST message from handleTextCaptured to content script via chrome.tabs.sendMessage with message and type
-- [ ] T018 [US1] Implement getCapturedText helper function in background.js to retrieve text from cache or chrome.storage.session (for Phase 3)
-- [ ] T019 [US1] Add console logging throughout background.js for debugging (extension installed, context menu clicked, text captured, storage operations)
+- [X] T010 [US1] Create background.js with in-memory cache variable for captured text (capturedTextCache = null)
+- [X] T011 [US1] Implement chrome.runtime.onInstalled listener in background.js to create context menu with id: "read-with-elevenlabs", title: "Read with ElevenLabs", contexts: ["selection"], documentUrlPatterns: ["http://*/*", "https://*/*"]
+- [X] T012 [US1] Implement chrome.contextMenus.onClicked listener in background.js to handle context menu clicks and send CAPTURE_TEXT message to active tab via chrome.tabs.sendMessage
+- [X] T013 [US1] Implement chrome.runtime.onMessage listener in background.js to receive TEXT_CAPTURED messages from content script
+- [X] T014 [US1] Implement handleTextCaptured function in background.js to store captured text in capturedTextCache and chrome.storage.session with key "lastCapturedText"
+- [X] T015 [US1] Add logic to handleTextCaptured in background.js to determine toast type (success for text <5000 chars, warning for text >5000 chars)
+- [X] T016 [US1] Add logic to handleTextCaptured in background.js to generate toast message with text preview (first 30 chars + "..." if truncated)
+- [X] T017 [US1] Send SHOW_TOAST message from handleTextCaptured to content script via chrome.tabs.sendMessage with message and type
+- [X] T018 [US1] Implement getCapturedText helper function in background.js to retrieve text from cache or chrome.storage.session (for Phase 3)
+- [X] T019 [US1] Add console logging throughout background.js for debugging (extension installed, context menu clicked, text captured, storage operations)
 
 **Content Script (content.js)**
 
-- [ ] T020 [P] [US1] Create content.js with chrome.runtime.onMessage listener for messages from service worker
-- [ ] T021 [US1] Implement captureSelectedText function in content.js to get window.getSelection(), validate, trim whitespace, and send TEXT_CAPTURED message to service worker
-- [ ] T022 [US1] Add validation in captureSelectedText to check for empty/whitespace-only selections and show error toast if empty
-- [ ] T023 [US1] Send TEXT_CAPTURED message with payload {text, url: window.location.href, length} via chrome.runtime.sendMessage
-- [ ] T024 [US1] Add error handling in captureSelectedText for failed message sending (catch and show error toast)
-- [ ] T025 [US1] Implement showToast function in content.js to create Shadow DOM with closed mode
-- [ ] T026 [US1] Add HTML escaping utility function (escapeHtml) in content.js using textContent assignment
-- [ ] T027 [US1] Implement Shadow DOM content injection in showToast with inline CSS from toast.css and escaped message
-- [ ] T028 [US1] Add dynamic background color logic in showToast based on toast type (success/warning/error)
-- [ ] T029 [US1] Append toast container to document.body in showToast and set auto-remove timeout for 3000ms
-- [ ] T030 [US1] Add ARIA attributes to toast in showToast (role="alert", aria-live="polite")
-- [ ] T031 [US1] Add console logging throughout content.js for debugging (script loaded, messages received, text captured, toast displayed/removed)
+- [X] T020 [P] [US1] Create content.js with chrome.runtime.onMessage listener for messages from service worker
+- [X] T021 [US1] Implement captureSelectedText function in content.js to get window.getSelection(), validate, trim whitespace, and send TEXT_CAPTURED message to service worker
+- [X] T022 [US1] Add validation in captureSelectedText to check for empty/whitespace-only selections and show error toast if empty
+- [X] T023 [US1] Send TEXT_CAPTURED message with payload {text, url: window.location.href, length} via chrome.runtime.sendMessage
+- [X] T024 [US1] Add error handling in captureSelectedText for failed message sending (catch and show error toast)
+- [X] T025 [US1] Implement showToast function in content.js to create Shadow DOM with closed mode
+- [X] T026 [US1] Add HTML escaping utility function (escapeHtml) in content.js using textContent assignment
+- [X] T027 [US1] Implement Shadow DOM content injection in showToast with inline CSS from toast.css and escaped message
+- [X] T028 [US1] Add dynamic background color logic in showToast based on toast type (success/warning/error)
+- [X] T029 [US1] Append toast container to document.body in showToast and set auto-remove timeout for 3000ms
+- [X] T030 [US1] Add ARIA attributes to toast in showToast (role="alert", aria-live="polite")
+- [X] T031 [US1] Add console logging throughout content.js for debugging (script loaded, messages received, text captured, toast displayed/removed)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently by selecting text, right-clicking, clicking context menu, and seeing toast confirmation.
 
@@ -95,21 +95,21 @@
 
 **Enhanced Error Handling and Compatibility**
 
-- [ ] T032 [P] [US2] Add CSP compliance verification to content.js by checking no inline scripts/styles in main document (only in Shadow DOM)
-- [ ] T033 [P] [US2] Add document.body availability check in showToast before attempting to append container
-- [ ] T034 [US2] Add error handling for Shadow DOM creation failures in showToast (try-catch with fallback to console error)
-- [ ] T035 [US2] Add validation in background.js to handle tabs without content script loaded (check for "Receiving end does not exist" error)
-- [ ] T036 [US2] Add logic in captureSelectedText to preserve multi-paragraph selections with line breaks (\n characters)
-- [ ] T037 [US2] Add Unicode and emoji support verification in escapeHtml function (ensure textContent handles UTF-8 correctly)
-- [ ] T038 [US2] Add defensive checks in chrome.runtime.onMessage listeners to validate message structure (type, timestamp, payload)
-- [ ] T039 [US2] Add graceful degradation for unknown message types (log warning, don't crash)
+- [X] T032 [P] [US2] Add CSP compliance verification to content.js by checking no inline scripts/styles in main document (only in Shadow DOM)
+- [X] T033 [P] [US2] Add document.body availability check in showToast before attempting to append container
+- [X] T034 [US2] Add error handling for Shadow DOM creation failures in showToast (try-catch with fallback to console error)
+- [X] T035 [US2] Add validation in background.js to handle tabs without content script loaded (check for "Receiving end does not exist" error)
+- [X] T036 [US2] Add logic in captureSelectedText to preserve multi-paragraph selections with line breaks (\n characters)
+- [X] T037 [US2] Add Unicode and emoji support verification in escapeHtml function (ensure textContent handles UTF-8 correctly)
+- [X] T038 [US2] Add defensive checks in chrome.runtime.onMessage listeners to validate message structure (type, timestamp, payload)
+- [X] T039 [US2] Add graceful degradation for unknown message types (log warning, don't crash)
 
 **Testing and Validation**
 
-- [ ] T040 [US2] Test extension on 10+ popular websites per quickstart.md test plan and document results
-- [ ] T041 [US2] Verify no console errors on any tested website (check both page DevTools and service worker DevTools)
-- [ ] T042 [US2] Test text selection edge cases: short text (1-2 words), long text (100+ words), very long text (5000+ chars), special characters, emojis, Unicode, multi-paragraph
-- [ ] T043 [US2] Verify extension works on SPA websites (Gmail, Twitter) after navigation without page reload
+- [X] T040 [US2] Test extension on 10+ popular websites per quickstart.md test plan and document results
+- [X] T041 [US2] Verify no console errors on any tested website (check both page DevTools and service worker DevTools)
+- [X] T042 [US2] Test text selection edge cases: short text (1-2 words), long text (100+ words), very long text (5000+ chars), special characters, emojis, Unicode, multi-paragraph
+- [X] T043 [US2] Verify extension works on SPA websites (Gmail, Twitter) after navigation without page reload
 
 **Checkpoint**: Extension should work consistently across all tested websites with no errors and consistent behavior.
 
@@ -125,21 +125,21 @@
 
 **Performance Optimization**
 
-- [ ] T044 [P] [US3] Verify content_scripts run_at is set to "document_idle" in manifest.json to avoid blocking critical rendering path
-- [ ] T045 [P] [US3] Verify all_frames is set to false in manifest.json to reduce memory overhead (only inject in top-level frames)
-- [ ] T046 [P] [US3] Optimize Shadow DOM creation in showToast to minimize DOM queries and use efficient innerHTML injection
-- [ ] T047 [US3] Add passive event listeners flag if any event listeners are added in content.js (currently none, but future-proofing)
-- [ ] T048 [US3] Verify chrome.storage.session usage instead of chrome.storage.local for faster read/write operations
-- [ ] T049 [US3] Add cleanup logic to ensure toast removal doesn't leak memory (verify setTimeout is cleared and container is removed from DOM)
+- [X] T044 [P] [US3] Verify content_scripts run_at is set to "document_idle" in manifest.json to avoid blocking critical rendering path
+- [X] T045 [P] [US3] Verify all_frames is set to false in manifest.json to reduce memory overhead (only inject in top-level frames)
+- [X] T046 [P] [US3] Optimize Shadow DOM creation in showToast to minimize DOM queries and use efficient innerHTML injection
+- [X] T047 [US3] Add passive event listeners flag if any event listeners are added in content.js (currently none, but future-proofing)
+- [X] T048 [US3] Verify chrome.storage.session usage instead of chrome.storage.local for faster read/write operations
+- [X] T049 [US3] Add cleanup logic to ensure toast removal doesn't leak memory (verify setTimeout is cleared and container is removed from DOM)
 
 **Performance Testing and Validation**
 
-- [ ] T050 [US3] Measure page load impact using Chrome DevTools Performance tab on example.com (with and without extension)
-- [ ] T051 [US3] Verify page load impact is <50ms per success criteria SC-003
-- [ ] T052 [US3] Measure memory usage via Chrome Task Manager for service worker (<2MB expected) and content script per tab (<5MB expected)
-- [ ] T053 [US3] Test context menu response time (should appear within 100ms of right-click per SC-001)
-- [ ] T054 [US3] Test toast display time (should appear within 200ms of clicking menu item per SC-008)
-- [ ] T055 [US3] Test on complex web apps (Google Docs, Figma, Google Maps) to verify no frame drops or stuttering
+- [X] T050 [US3] Measure page load impact using Chrome DevTools Performance tab on example.com (with and without extension)
+- [X] T051 [US3] Verify page load impact is <50ms per success criteria SC-003
+- [X] T052 [US3] Measure memory usage via Chrome Task Manager for service worker (<2MB expected) and content script per tab (<5MB expected)
+- [X] T053 [US3] Test context menu response time (should appear within 100ms of right-click per SC-001)
+- [X] T054 [US3] Test toast display time (should appear within 200ms of clicking menu item per SC-008)
+- [X] T055 [US3] Test on complex web apps (Google Docs, Figma, Google Maps) to verify no frame drops or stuttering
 
 **Checkpoint**: All performance requirements should be met with measurable validation.
 
@@ -149,13 +149,13 @@
 
 **Purpose**: Final validation, documentation updates, and overall quality checks
 
-- [ ] T056 [P] Verify manifest.json is valid JSON (use json validator or chrome://extensions load test)
-- [ ] T057 [P] Run quickstart.md validation: complete all steps from Step 1 through Step 9
-- [ ] T058 Run full verification checklist from quickstart.md covering all FR (Functional Requirements) and SC (Success Criteria)
-- [ ] T059 Test service worker lifecycle: verify termination and wake behavior, verify state persistence across restarts
-- [ ] T060 Document any incompatible websites discovered during testing (e.g., sites with strict CSP that block extensions)
-- [ ] T061 Add final console log cleanup: ensure all logs are helpful for debugging, remove any sensitive data logging
-- [ ] T062 Verify no JavaScript console errors during normal usage across all tested websites (SC-006)
+- [X] T056 [P] Verify manifest.json is valid JSON (use json validator or chrome://extensions load test)
+- [X] T057 [P] Run quickstart.md validation: complete all steps from Step 1 through Step 9
+- [X] T058 Run full verification checklist from quickstart.md covering all FR (Functional Requirements) and SC (Success Criteria)
+- [X] T059 Test service worker lifecycle: verify termination and wake behavior, verify state persistence across restarts
+- [X] T060 Document any incompatible websites discovered during testing (e.g., sites with strict CSP that block extensions)
+- [X] T061 Add final console log cleanup: ensure all logs are helpful for debugging, remove any sensitive data logging
+- [X] T062 Verify no JavaScript console errors during normal usage across all tested websites (SC-006)
 
 ---
 

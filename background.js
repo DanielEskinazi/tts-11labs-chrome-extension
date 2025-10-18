@@ -1,6 +1,11 @@
 // background.js - Background Service Worker for ElevenLabs TTS Chrome Extension
 // Handles context menu creation, message passing, and captured text storage
 
+// Import API utilities
+import { textToSpeech, validateApiKey, validateTextLength } from './src/api/elevenlabs.js';
+import { getApiKey } from './src/utils/storage.js';
+import { mapApiErrorToUserMessage } from './src/utils/errors.js';
+
 // In-memory cache for captured text (fast access during active period)
 let capturedTextCache = null;
 
@@ -55,6 +60,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'TEXT_CAPTURED') {
     handleTextCaptured(message.payload, sender.tab.id);
     sendResponse({ success: true });
+  } else if (message.type === 'TTS_REQUEST') {
+    // Handle TTS request asynchronously
+    handleTTSRequest(message.payload, sender.tab.id)
+      .then(result => sendResponse({ success: true, payload: result }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
   } else {
     // T039: Graceful degradation for unknown message types
     console.warn('Unknown message type received:', message.type);
@@ -137,5 +148,68 @@ async function getCapturedText() {
   } catch (error) {
     console.error('Failed to retrieve captured text:', error);
     return null;
+  }
+}
+
+// Handle TTS request from content script
+async function handleTTSRequest(payload, tabId) {
+  const startTime = Date.now();
+  const { text } = payload;
+
+  console.log(`TTS request received for ${text.length} characters`);
+
+  try {
+    // Retrieve API key from storage
+    const apiKey = await getApiKey();
+
+    // Validate API key
+    if (!validateApiKey(apiKey)) {
+      throw new Error('API_KEY_MISSING');
+    }
+
+    // Validate text length
+    if (!validateTextLength(text)) {
+      if (text.length > 5000) {
+        throw new Error('TEXT_TOO_LONG');
+      } else {
+        throw new Error('INVALID_TEXT');
+      }
+    }
+
+    // Call ElevenLabs API
+    const audioBlob = await textToSpeech(text, apiKey);
+
+    const responseTime = Date.now() - startTime;
+    console.log(`TTS API request successful in ${responseTime}ms, audio size: ${audioBlob.size} bytes`);
+
+    // Return audio blob (will be sent back to content script)
+    return {
+      audioBlob: audioBlob,
+      responseTime: responseTime
+    };
+
+  } catch (error) {
+    console.error('TTS request failed:', error);
+
+    // Map error to user-friendly message
+    let errorResponse;
+    if (error.message === 'API_KEY_MISSING') {
+      errorResponse = {
+        type: 'API_KEY_MISSING',
+        message: 'No API key configured. Please add your ElevenLabs API key in extension settings.'
+      };
+    } else if (error.message === 'TEXT_TOO_LONG') {
+      errorResponse = {
+        type: 'TEXT_TOO_LONG',
+        message: 'Text too long. Maximum 5000 characters supported.'
+      };
+    } else {
+      // Use error mapping utility for API errors
+      const statusCode = error.message.match(/status (\d+)/)?.[1];
+      errorResponse = mapApiErrorToUserMessage(error, statusCode ? parseInt(statusCode) : null);
+    }
+
+    // Throw error to be caught by message handler
+    throw new Error(errorResponse.message);
   }
 }

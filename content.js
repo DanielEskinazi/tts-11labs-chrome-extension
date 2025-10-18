@@ -64,6 +64,9 @@ function captureSelectedText() {
       timestamp: Date.now()
     }).then(response => {
       console.log('Text capture acknowledged by service worker:', response);
+
+      // After text is captured, trigger TTS request
+      return triggerTTSRequest(trimmedText);
     }).catch(error => {
       console.error('Failed to send TEXT_CAPTURED message:', error);
       showToast({
@@ -196,4 +199,50 @@ function escapeHtml(text) {
   // textContent assignment automatically handles UTF-8, emojis, and special characters
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Trigger TTS request to background service worker
+async function triggerTTSRequest(text) {
+  try {
+    console.log(`Triggering TTS request for ${text.length} characters`);
+
+    // Show loading toast
+    showToast({
+      message: 'Converting text to speech...',
+      type: 'success'
+    });
+
+    // Send TTS request to background
+    const response = await chrome.runtime.sendMessage({
+      type: 'TTS_REQUEST',
+      payload: {
+        text: text
+      },
+      timestamp: Date.now()
+    });
+
+    if (response.success) {
+      console.log('TTS request successful:', response.payload);
+
+      // Show success toast
+      showToast({
+        message: 'Audio ready',
+        type: 'success'
+      });
+    } else {
+      console.error('TTS request failed:', response.error);
+      // Error handling will be in Task T018
+      showToast({
+        message: response.error || 'TTS request failed',
+        type: 'error'
+      });
+    }
+
+  } catch (error) {
+    console.error('Error triggering TTS request:', error);
+    showToast({
+      message: 'Failed to process text-to-speech request',
+      type: 'error'
+    });
+  }
 }

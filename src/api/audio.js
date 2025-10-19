@@ -19,6 +19,7 @@ export class AudioPlayer {
     this.status = 'idle'; // idle, loading, playing, paused, error
     this.currentPosition = 0;
     this.duration = 0;
+    this.isCleaningUp = false; // Track if we're in cleanup mode
 
     // Event handlers
     this.onPlaybackEnd = null;
@@ -82,14 +83,27 @@ export class AudioPlayer {
         });
 
         this.audio.addEventListener('error', (event) => {
-          console.error('[AudioPlayer] Audio element error event:', event);
-          console.error('[AudioPlayer] Audio error details:', {
-            error: this.audio.error,
-            code: this.audio.error?.code,
-            message: this.audio.error?.message,
+          // Ignore errors during cleanup (happens when blob URL is revoked)
+          if (this.isCleaningUp) {
+            console.log('[AudioPlayer] Ignoring error during cleanup');
+            return;
+          }
+
+          // Ignore spurious errors with no error object (happens after cleanup when blob URL is revoked)
+          if (!this.audio.error) {
+            console.log('[AudioPlayer] Ignoring spurious error event (no error object, likely from cleanup)');
+            return;
+          }
+
+          const errorDetails = {
+            errorCode: this.audio.error?.code,
+            errorMessage: this.audio.error?.message,
             networkState: this.audio.networkState,
-            readyState: this.audio.readyState
-          });
+            readyState: this.audio.readyState,
+            src: this.audio.src?.substring(0, 50) + '...',
+            eventType: event.type
+          };
+          console.error('[AudioPlayer] Audio element error event:', JSON.stringify(errorDetails, null, 2));
           this._updateStatus('error');
           if (this.onPlaybackError) {
             this.onPlaybackError(event);
@@ -200,6 +214,8 @@ export class AudioPlayer {
    * Clean up audio resources
    */
   cleanup() {
+    this.isCleaningUp = true; // Set flag to ignore errors during cleanup
+
     if (this.audio) {
       this.audio.pause();
       this.audio.src = '';
@@ -215,5 +231,7 @@ export class AudioPlayer {
     this.duration = 0;
     this._updateStatus('idle');
     console.log('Audio resources cleaned up');
+
+    this.isCleaningUp = false; // Reset flag
   }
 }

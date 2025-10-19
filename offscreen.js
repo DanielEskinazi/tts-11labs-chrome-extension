@@ -55,9 +55,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
 
     default:
-      console.warn('Unknown message type:', message.type);
-      sendResponse({ success: false, error: 'Unknown message type' });
-      return false;
+      // Ignore messages not meant for offscreen document (e.g., CONTROL_PAUSE_CLICKED, TEXT_CAPTURED, TTS_REQUEST)
+      // These are handled by background.js
+      console.log('[Offscreen] Ignoring message type:', message.type, '(not for offscreen)');
+      return false; // Don't send response for messages we're not handling
   }
 });
 
@@ -95,6 +96,21 @@ async function handleLoadAudio(payload) {
     if (!audioPlayer) {
       audioPlayer = new AudioPlayer();
 
+      // Set up status change listener
+      audioPlayer.onStatusChange = (newStatus) => {
+        console.log('[Offscreen] Audio status changed to:', newStatus);
+        // Notify background script of state change
+        chrome.runtime.sendMessage({
+          type: 'AUDIO_STATE_CHANGED',
+          payload: {
+            status: newStatus,
+            currentPosition: audioPlayer.currentPosition,
+            duration: audioPlayer.duration
+          },
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to notify background of state change:', err));
+      };
+
       // Set up completion listener
       audioPlayer.onPlaybackEnd = () => {
         console.log('Audio playback completed');
@@ -108,18 +124,31 @@ async function handleLoadAudio(payload) {
 
       // Set up error listener
       audioPlayer.onPlaybackError = (event) => {
-        console.error('[Offscreen] Audio playback error event:', event);
-        // Extract error details from Audio element
-        const errorDetails = audioPlayer.audio?.error ? {
-          code: audioPlayer.audio.error.code,
-          message: audioPlayer.audio.error.message,
-          MEDIA_ERR_ABORTED: audioPlayer.audio.error.MEDIA_ERR_ABORTED,
-          MEDIA_ERR_NETWORK: audioPlayer.audio.error.MEDIA_ERR_NETWORK,
-          MEDIA_ERR_DECODE: audioPlayer.audio.error.MEDIA_ERR_DECODE,
-          MEDIA_ERR_SRC_NOT_SUPPORTED: audioPlayer.audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED
-        } : { error: 'Unknown error' };
+        // Ignore spurious errors with no error object (happens after cleanup)
+        if (!audioPlayer.audio?.error) {
+          console.log('[Offscreen] Ignoring spurious error event (no error object, likely from cleanup)');
+          return;
+        }
 
-        console.error('[Offscreen] Audio error details:', errorDetails);
+        // Extract error details from Audio element
+        const errorDetails = {
+          errorCode: audioPlayer.audio?.error?.code || 'unknown',
+          errorMessage: audioPlayer.audio?.error?.message || 'No error message',
+          networkState: audioPlayer.audio?.networkState,
+          readyState: audioPlayer.audio?.readyState,
+          eventType: event?.type || 'unknown',
+          // Map error codes to readable names
+          errorType: (() => {
+            const code = audioPlayer.audio?.error?.code;
+            if (code === 1) return 'MEDIA_ERR_ABORTED';
+            if (code === 2) return 'MEDIA_ERR_NETWORK';
+            if (code === 3) return 'MEDIA_ERR_DECODE';
+            if (code === 4) return 'MEDIA_ERR_SRC_NOT_SUPPORTED';
+            return 'UNKNOWN_ERROR';
+          })()
+        };
+
+        console.error('[Offscreen] Audio playback error:', JSON.stringify(errorDetails, null, 2));
 
         // Notify background script
         chrome.runtime.sendMessage({

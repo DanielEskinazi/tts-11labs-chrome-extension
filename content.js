@@ -6,6 +6,11 @@ console.log('ElevenLabs TTS content script loaded');
 // Track if audio is playing
 let isAudioPlaying = false;
 
+// Control panel state
+let controlPanelContainer = null;
+let controlPanelShadow = null;
+let isActionPending = false;
+
 // Keyboard shortcuts for audio control
 document.addEventListener('keydown', (event) => {
   // Ctrl+Shift+P = Pause/Resume audio
@@ -42,6 +47,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       type: 'warning',
       action: 'PLAY_AUDIO'
     });
+  } else if (message.type === 'AUDIO_PLAYBACK_STARTED') {
+    // Show control panel when audio starts
+    showControlPanel();
+  } else if (message.type === 'AUDIO_PLAYBACK_PAUSED') {
+    // Update button to play icon
+    updateButtonState('paused');
+  } else if (message.type === 'AUDIO_PLAYBACK_RESUMED') {
+    // Update button to pause icon
+    updateButtonState('playing');
+  } else if (message.type === 'AUDIO_PLAYBACK_STOPPED') {
+    // Hide control panel when audio stops
+    hideControlPanel();
+    isAudioPlaying = false;
   } else {
     // T039: Graceful degradation for unknown message types
     console.warn('Unknown message type received:', message.type);
@@ -364,5 +382,294 @@ async function triggerTTSRequest(text) {
       message: 'Failed to process text-to-speech request',
       type: 'error'
     });
+  }
+}
+
+// ========================================
+// CONTROL PANEL FUNCTIONS
+// ========================================
+
+/**
+ * Show audio playback control panel
+ * Creates a floating Shadow DOM control panel with pause/play and stop buttons
+ */
+function showControlPanel() {
+  console.log('Showing control panel');
+
+  // Check if document.body is available
+  if (!document.body) {
+    console.error('Cannot show control panel: document.body is not available');
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      console.log('Waiting for document.body to be available');
+      document.addEventListener('DOMContentLoaded', () => showControlPanel());
+      return;
+    }
+    return;
+  }
+
+  try {
+    // Remove any existing control panel first
+    const existingPanel = document.querySelector('.elevenlabs-tts-controls-host');
+    if (existingPanel) {
+      existingPanel.remove();
+      console.log('Removed old control panel');
+    }
+
+    // Create host element for shadow DOM
+    controlPanelContainer = document.createElement('div');
+    controlPanelContainer.className = 'elevenlabs-tts-controls-host';
+
+    // Attach shadow root in closed mode (prevents page JS access)
+    controlPanelShadow = controlPanelContainer.attachShadow({ mode: 'closed' });
+
+    // Inject styles and content into shadow root
+    controlPanelShadow.innerHTML = `
+      <style>
+        .control-panel {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          z-index: 2147483647; /* Max z-index */
+
+          display: flex;
+          gap: 12px;
+          padding: 12px 16px;
+
+          background: rgba(0, 0, 0, 0.85);
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2),
+                      0 0 0 1px rgba(255, 255, 255, 0.1);
+
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          animation: slideInFromRight 0.3s ease-out;
+        }
+
+        .control-panel button {
+          width: 44px;
+          height: 44px;
+          border: none;
+          border-radius: 6px;
+          background: rgba(255, 255, 255, 0.15);
+          color: white;
+          font-size: 20px;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.1s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .control-panel button:hover {
+          background: rgba(255, 255, 255, 0.25);
+        }
+
+        .control-panel button:active {
+          transform: scale(0.95);
+        }
+
+        .control-panel button:focus {
+          outline: 2px solid white;
+          outline-offset: 2px;
+        }
+
+        @keyframes slideInFromRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+          .control-panel {
+            right: auto;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 16px;
+            padding: 10px 14px;
+            gap: 10px;
+          }
+        }
+      </style>
+      <div class="control-panel" role="region" aria-label="Audio playback controls">
+        <button id="pause-btn" aria-label="Pause">⏸</button>
+        <button id="stop-btn" aria-label="Stop">⏹</button>
+      </div>
+    `;
+
+    // Attach event listeners to buttons
+    const pauseBtn = controlPanelShadow.querySelector('#pause-btn');
+    const stopBtn = controlPanelShadow.querySelector('#stop-btn');
+
+    pauseBtn.addEventListener('click', handleControlPauseClicked);
+    stopBtn.addEventListener('click', handleControlStopClicked);
+
+    // Append to page
+    document.body.appendChild(controlPanelContainer);
+
+    console.log('Control panel displayed');
+
+  } catch (error) {
+    console.error('Error showing control panel:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * Hide audio playback control panel
+ * Removes the control panel from the page
+ */
+function hideControlPanel() {
+  console.log('Hiding control panel');
+
+  if (controlPanelContainer && controlPanelContainer.parentNode) {
+    controlPanelContainer.remove();
+    controlPanelContainer = null;
+    controlPanelShadow = null;
+    console.log('Control panel removed');
+  } else {
+    console.log('No control panel to remove');
+  }
+}
+
+/**
+ * Handle pause button click
+ * Implements optimistic UI update with confirmation
+ */
+async function handleControlPauseClicked() {
+  console.log('Pause button clicked');
+
+  // Prevent rapid clicking
+  if (isActionPending) {
+    console.log('Control action already pending, ignoring click');
+    return;
+  }
+
+  isActionPending = true;
+
+  try {
+    // Send pause message to background
+    const response = await chrome.runtime.sendMessage({
+      type: 'CONTROL_PAUSE_CLICKED',
+      payload: {},
+      timestamp: Date.now()
+    });
+
+    if (!response.success) {
+      console.error('Pause failed:', response.error);
+    }
+  } catch (error) {
+    console.error('Failed to send pause message:', error);
+  } finally {
+    isActionPending = false;
+  }
+}
+
+/**
+ * Handle resume button click
+ * Implements optimistic UI update with confirmation
+ */
+async function handleControlResumeClicked() {
+  console.log('Resume button clicked');
+
+  // Prevent rapid clicking
+  if (isActionPending) {
+    console.log('Control action already pending, ignoring click');
+    return;
+  }
+
+  isActionPending = true;
+
+  try {
+    // Send resume message to background
+    const response = await chrome.runtime.sendMessage({
+      type: 'CONTROL_RESUME_CLICKED',
+      payload: {},
+      timestamp: Date.now()
+    });
+
+    if (!response.success) {
+      console.error('Resume failed:', response.error);
+    }
+  } catch (error) {
+    console.error('Failed to send resume message:', error);
+  } finally {
+    isActionPending = false;
+  }
+}
+
+/**
+ * Handle stop button click
+ */
+async function handleControlStopClicked() {
+  console.log('Stop button clicked');
+
+  // Prevent rapid clicking
+  if (isActionPending) {
+    console.log('Control action already pending, ignoring click');
+    return;
+  }
+
+  isActionPending = true;
+
+  try {
+    // Send stop message to background
+    const response = await chrome.runtime.sendMessage({
+      type: 'CONTROL_STOP_CLICKED',
+      payload: {},
+      timestamp: Date.now()
+    });
+
+    if (!response.success) {
+      console.error('Stop failed:', response.error);
+    }
+  } catch (error) {
+    console.error('Failed to send stop message:', error);
+  } finally {
+    isActionPending = false;
+  }
+}
+
+/**
+ * Update button state (pause ↔ play toggle)
+ * @param {string} newState - 'playing' or 'paused'
+ */
+function updateButtonState(newState) {
+  if (!controlPanelShadow) {
+    console.warn('No control panel shadow DOM to update');
+    return;
+  }
+
+  const pauseBtn = controlPanelShadow.querySelector('#pause-btn');
+  if (!pauseBtn) {
+    console.error('Pause button not found in shadow DOM');
+    return;
+  }
+
+  if (newState === 'paused') {
+    // Show play button
+    pauseBtn.textContent = '▶';
+    pauseBtn.setAttribute('aria-label', 'Play');
+    pauseBtn.removeEventListener('click', handleControlPauseClicked);
+    pauseBtn.addEventListener('click', handleControlResumeClicked);
+    console.log('Button state updated to Play');
+  } else if (newState === 'playing') {
+    // Show pause button
+    pauseBtn.textContent = '⏸';
+    pauseBtn.setAttribute('aria-label', 'Pause');
+    pauseBtn.removeEventListener('click', handleControlResumeClicked);
+    pauseBtn.addEventListener('click', handleControlPauseClicked);
+    console.log('Button state updated to Pause');
+  } else {
+    console.warn('Unknown button state:', newState);
   }
 }

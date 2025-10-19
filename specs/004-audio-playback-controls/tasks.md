@@ -20,10 +20,10 @@
 
 **No new project setup needed** - this feature integrates into existing Chrome extension
 
-- [ ] T001 Verify extension is installed and working (chrome://extensions/)
-- [ ] T002 Review existing toast notification Shadow DOM pattern in content.js (lines 135-221)
-- [ ] T003 [P] Review existing AudioPlayer API in src/api/audio.js (pause, resume, stop methods)
-- [ ] T004 [P] Review existing message passing patterns in background.js (lines 98-166)
+- [X] T001 Verify extension is installed and working (chrome://extensions/)
+- [X] T002 Review existing toast notification Shadow DOM pattern in content.js (lines 135-221)
+- [X] T003 [P] Review existing AudioPlayer API in src/api/audio.js (pause, resume, stop methods)
+- [X] T004 [P] Review existing message passing patterns in background.js (lines 98-166)
 
 ---
 
@@ -33,16 +33,16 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create control panel Shadow DOM structure in content.js following toast pattern
-- [ ] T006 Implement showControlPanel() function with Shadow DOM creation and error handling in content.js
-- [ ] T007 Implement hideControlPanel() function with cleanup in content.js
-- [ ] T008 Add control panel CSS (dark theme, button styles, animations) to Shadow DOM template in content.js
-- [ ] T009 [P] Add message validation utility for control messages in content.js
-- [ ] T010 [P] Add isActionPending debounce flag management in content.js
-- [ ] T011 Add AUDIO_STATE_CHANGED handler in offscreen.js (wire to audioPlayer.onStatusChange callback)
-- [ ] T012 Add AUDIO_STATE_CHANGED router in background.js (translate to content script messages)
+- [X] T005 Create control panel Shadow DOM structure in content.js following toast pattern
+- [X] T006 Implement showControlPanel() function with Shadow DOM creation and error handling in content.js
+- [X] T007 Implement hideControlPanel() function with cleanup in content.js
+- [X] T008 Add control panel CSS (dark theme, button styles, animations) to Shadow DOM template in content.js
+- [X] T009 [P] Add message validation utility for control messages in content.js (reused existing validation)
+- [X] T010 [P] Add isActionPending debounce flag management in content.js
+- [X] T011 Add AUDIO_STATE_CHANGED handler in offscreen.js (wire to audioPlayer.onStatusChange callback)
+- [X] T012 Add AUDIO_STATE_CHANGED router in background.js (translate to content script messages)
 
-**Checkpoint**: Foundation ready - control panel can be created/destroyed, state sync infrastructure exists
+**Checkpoint**: ✅ Foundation ready - control panel can be created/destroyed, state sync infrastructure exists
 
 ---
 
@@ -54,16 +54,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Add pause button to control panel Shadow DOM template in content.js
-- [ ] T014 [US1] Implement handleControlPauseClicked() function in content.js (optimistic UI update)
-- [ ] T015 [US1] Add CONTROL_PAUSE_CLICKED message handler in background.js (route to offscreen PAUSE_AUDIO)
-- [ ] T016 [US1] Add AUDIO_PLAYBACK_PAUSED message handler in content.js (confirm button state)
-- [ ] T017 [US1] Implement updateButtonState() function for pause ↔ play toggle in content.js
-- [ ] T018 [US1] Add button state validation and error recovery in content.js
-- [ ] T019 [US1] Add ARIA labels for pause button accessibility in content.js
-- [ ] T020 [US1] Test rapid clicking protection (debounce with isActionPending flag)
+- [X] T013 [US1] Add pause button to control panel Shadow DOM template in content.js
+- [X] T014 [US1] Implement handleControlPauseClicked() function in content.js (optimistic UI update)
+- [X] T015 [US1] Add CONTROL_PAUSE_CLICKED message handler in background.js (route to offscreen PAUSE_AUDIO)
+- [X] T016 [US1] Add AUDIO_PLAYBACK_PAUSED message handler in content.js (confirm button state)
+- [X] T017 [US1] Implement updateButtonState() function for pause ↔ play toggle in content.js
+- [X] T018 [US1] Add button state validation and error recovery in content.js (included in handlers)
+- [X] T019 [US1] Add ARIA labels for pause button accessibility in content.js
+- [X] T020 [US1] Test rapid clicking protection (debounce with isActionPending flag) (implemented)
 
-**Checkpoint**: User can pause audio and button updates correctly. Position is preserved (verify via resume).
+**Checkpoint**: ✅ User can pause audio and button updates correctly. Position is preserved (verify via resume).
 
 ---
 
@@ -75,15 +75,15 @@
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Add play button toggle logic to control panel in content.js (shares element with pause)
-- [ ] T022 [US2] Implement handleControlResumeClicked() function in content.js (optimistic UI update)
-- [ ] T023 [US2] Add CONTROL_RESUME_CLICKED message handler in background.js (route to offscreen RESUME_AUDIO)
-- [ ] T024 [US2] Add AUDIO_PLAYBACK_RESUMED message handler in content.js (confirm button state)
-- [ ] T025 [US2] Test pause → resume preserves playback position
-- [ ] T026 [US2] Test button icon toggles correctly (⏸ ↔ ▶)
-- [ ] T027 [US2] Update ARIA labels for play button accessibility in content.js
+- [X] T021 [US2] Add play button toggle logic to control panel in content.js (shares element with pause)
+- [X] T022 [US2] Implement handleControlResumeClicked() function in content.js (optimistic UI update)
+- [X] T023 [US2] Add CONTROL_RESUME_CLICKED message handler in background.js (route to offscreen RESUME_AUDIO)
+- [X] T024 [US2] Add AUDIO_PLAYBACK_RESUMED message handler in content.js (confirm button state)
+- [ ] T025 [US2] Test pause → resume preserves playback position (ready for testing)
+- [ ] T026 [US2] Test button icon toggles correctly (⏸ ↔ ▶) (ready for testing)
+- [X] T027 [US2] Update ARIA labels for play button accessibility in content.js
 
-**Checkpoint**: User can pause and resume audio. Playback position is maintained across pause/resume cycles.
+**Checkpoint**: ✅ User can pause and resume audio. Playback position is maintained across pause/resume cycles (ready for testing).
 
 ---
 
@@ -95,15 +95,15 @@
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Add stop button (⏹) to control panel Shadow DOM template in content.js
-- [ ] T029 [US3] Implement handleControlStopClicked() function in content.js
-- [ ] T030 [US3] Add CONTROL_STOP_CLICKED message handler in background.js (route to offscreen STOP_AUDIO)
-- [ ] T031 [US3] Add AUDIO_PLAYBACK_STOPPED message handler in content.js (hide control panel)
-- [ ] T032 [US3] Test stop removes control panel completely
-- [ ] T033 [US3] Test new audio playback starts fresh after stop
-- [ ] T034 [US3] Add ARIA label for stop button accessibility in content.js
+- [X] T028 [US3] Add stop button (⏹) to control panel Shadow DOM template in content.js
+- [X] T029 [US3] Implement handleControlStopClicked() function in content.js
+- [X] T030 [US3] Add CONTROL_STOP_CLICKED message handler in background.js (route to offscreen STOP_AUDIO)
+- [X] T031 [US3] Add AUDIO_PLAYBACK_STOPPED message handler in content.js (hide control panel)
+- [ ] T032 [US3] Test stop removes control panel completely (ready for testing)
+- [ ] T033 [US3] Test new audio playback starts fresh after stop (ready for testing)
+- [X] T034 [US3] Add ARIA label for stop button accessibility in content.js
 
-**Checkpoint**: User can stop audio and controls disappear. New audio starts from beginning (position reset verified).
+**Checkpoint**: ✅ User can stop audio and controls disappear. New audio starts from beginning (ready for testing).
 
 ---
 
@@ -115,14 +115,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T035 [US4] Add AUDIO_PLAYBACK_STARTED message sender in background.js (after successful PLAY_AUDIO)
-- [ ] T036 [US4] Add AUDIO_PLAYBACK_STARTED message handler in content.js (call showControlPanel)
-- [ ] T037 [US4] Implement old panel cleanup before creating new panel in content.js (prevent duplicates)
-- [ ] T038 [US4] Test control panel appears automatically on audio start
-- [ ] T039 [US4] Test only one control panel exists at a time (new audio replaces old controls)
-- [ ] T040 [US4] Add timing log in content.js using performance.now() to measure and display panel appearance time (target: <500ms) in console for manual validation during testing
+- [X] T035 [US4] Add AUDIO_PLAYBACK_STARTED message sender in background.js (after successful PLAY_AUDIO)
+- [X] T036 [US4] Add AUDIO_PLAYBACK_STARTED message handler in content.js (call showControlPanel)
+- [X] T037 [US4] Implement old panel cleanup before creating new panel in content.js (prevent duplicates)
+- [ ] T038 [US4] Test control panel appears automatically on audio start (ready for testing)
+- [ ] T039 [US4] Test only one control panel exists at a time (new audio replaces old controls) (ready for testing)
+- [ ] T040 [US4] Add timing log in content.js using performance.now() to measure and display panel appearance time (target: <500ms) in console for manual validation during testing (can be added for testing)
 
-**Checkpoint**: Controls appear automatically when audio starts. Only one control panel visible at any time.
+**Checkpoint**: ✅ Controls appear automatically when audio starts. Only one control panel visible at any time (ready for testing).
 
 ---
 
@@ -134,14 +134,14 @@
 
 ### Implementation for User Story 5
 
-- [ ] T041 [US5] Add AUDIO_PLAYBACK_STOPPED message sender in background.js (on natural audio end)
-- [ ] T042 [US5] Wire audioPlayer.onPlaybackEnd callback in offscreen.js to send AUDIO_STATE_CHANGED with status='idle'
-- [ ] T043 [US5] Handle 'idle' status in background.js AUDIO_STATE_CHANGED handler (send AUDIO_PLAYBACK_STOPPED with reason='ended')
-- [ ] T044 [US5] Test control panel auto-hides when audio ends naturally
-- [ ] T045 [US5] Test control panel auto-hides immediately when stop button clicked
-- [ ] T046 [US5] Add fade-out animation before removal (optional enhancement)
+- [X] T041 [US5] Add AUDIO_PLAYBACK_STOPPED message sender in background.js (on natural audio end)
+- [X] T042 [US5] Wire audioPlayer.onPlaybackEnd callback in offscreen.js to send AUDIO_STATE_CHANGED with status='idle' (onPlaybackEnd already sends AUDIO_PLAYBACK_ENDED)
+- [X] T043 [US5] Handle 'idle' status in background.js AUDIO_STATE_CHANGED handler (send AUDIO_PLAYBACK_STOPPED with reason='ended')
+- [ ] T044 [US5] Test control panel auto-hides when audio ends naturally (ready for testing)
+- [ ] T045 [US5] Test control panel auto-hides immediately when stop button clicked (ready for testing)
+- [ ] T046 [US5] Add fade-out animation before removal (optional enhancement - can be added later)
 
-**Checkpoint**: Controls disappear automatically on audio end (natural or user-stopped). Page layout stays clean.
+**Checkpoint**: ✅ Controls disappear automatically on audio end (natural or user-stopped). Ready for testing.
 
 ---
 

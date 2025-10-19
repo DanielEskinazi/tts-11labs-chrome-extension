@@ -109,6 +109,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'TEXT_CAPTURED') {
     handleTextCaptured(message.payload, sender.tab.id);
     sendResponse({ success: true });
+    return false; // Synchronous response
   } else if (message.type === 'TTS_REQUEST') {
     // Handle TTS request asynchronously
     handleTTSRequest(message.payload, sender.tab.id)
@@ -145,14 +146,114 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true; // Async response
+  } else if (message.type === 'CONTROL_PAUSE_CLICKED') {
+    // Forward pause control to offscreen document
+    console.log('Control pause clicked, forwarding to offscreen');
+    chrome.runtime.sendMessage({
+      type: 'PAUSE_AUDIO',
+      payload: {},
+      timestamp: Date.now()
+    })
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'CONTROL_RESUME_CLICKED') {
+    // Forward resume control to offscreen document
+    console.log('Control resume clicked, forwarding to offscreen');
+    chrome.runtime.sendMessage({
+      type: 'RESUME_AUDIO',
+      payload: {},
+      timestamp: Date.now()
+    })
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'CONTROL_STOP_CLICKED') {
+    // Forward stop control to offscreen document
+    console.log('Control stop clicked, forwarding to offscreen');
+    chrome.runtime.sendMessage({
+      type: 'STOP_AUDIO',
+      payload: {},
+      timestamp: Date.now()
+    })
+      .then(result => {
+        // Notify content script that audio stopped
+        if (sender.tab?.id) {
+          chrome.tabs.sendMessage(sender.tab.id, {
+            type: 'AUDIO_PLAYBACK_STOPPED',
+            payload: { reason: 'user' },
+            timestamp: Date.now()
+          }).catch(err => console.error('Failed to notify content script:', err));
+        }
+        sendResponse(result);
+      })
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'AUDIO_STATE_CHANGED') {
+    // Audio state changed in offscreen document - relay to content script
+    const { status, currentPosition, duration } = message.payload;
+    console.log('Audio state changed:', status);
+
+    // Find active tab to send message to
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        const tabId = tabs[0].id;
+
+        // Map status to appropriate content script message
+        let messageType;
+        if (status === 'playing') {
+          messageType = 'AUDIO_PLAYBACK_RESUMED';
+        } else if (status === 'paused') {
+          messageType = 'AUDIO_PLAYBACK_PAUSED';
+        } else if (status === 'idle') {
+          messageType = 'AUDIO_PLAYBACK_STOPPED';
+        } else {
+          // For loading or error states, don't send message
+          return;
+        }
+
+        chrome.tabs.sendMessage(tabId, {
+          type: messageType,
+          payload: { currentPosition, duration, reason: status === 'idle' ? 'ended' : 'state_change' },
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to send state change to content:', err));
+      }
+    });
+
+    sendResponse({ success: true });
+    return false;
   } else if (message.type === 'AUDIO_PLAYBACK_ENDED') {
     // Audio playback completed in offscreen document
     console.log('Audio playback completed');
+
+    // Notify content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'AUDIO_PLAYBACK_STOPPED',
+          payload: { reason: 'ended' },
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to notify content script:', err));
+      }
+    });
+
     sendResponse({ success: true });
     return false;
   } else if (message.type === 'AUDIO_PLAYBACK_ERROR') {
     // Audio playback error in offscreen document
     console.error('Audio playback error from offscreen:', message.payload?.error);
+
+    // Notify content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'AUDIO_PLAYBACK_STOPPED',
+          payload: { reason: 'error' },
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to notify content script:', err));
+      }
+    });
+
     sendResponse({ success: true });
     return false;
   } else {
@@ -308,6 +409,16 @@ async function handleTTSRequest(payload, tabId) {
       }
 
       console.log('Automatic playback started in offscreen document');
+
+      // Notify content script to show control panel
+      chrome.tabs.sendMessage(tabId, {
+        type: 'AUDIO_PLAYBACK_STARTED',
+        payload: {
+          duration: loadResult.payload.duration
+        },
+        timestamp: Date.now()
+      }).catch(err => console.error('Failed to send AUDIO_PLAYBACK_STARTED message:', err));
+
     } catch (playError) {
       // Handle autoplay blocking
       if (playError.message && playError.message.includes('AUTOPLAY_BLOCKED')) {

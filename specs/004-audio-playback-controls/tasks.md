@@ -120,7 +120,7 @@
 - [ ] T037 [US4] Implement old panel cleanup before creating new panel in content.js (prevent duplicates)
 - [ ] T038 [US4] Test control panel appears automatically on audio start
 - [ ] T039 [US4] Test only one control panel exists at a time (new audio replaces old controls)
-- [ ] T040 [US4] Add timing log to verify panel appears within 500ms
+- [ ] T040 [US4] Add timing log in content.js using performance.now() to measure and display panel appearance time (target: <500ms) in console for manual validation during testing
 
 **Checkpoint**: Controls appear automatically when audio starts. Only one control panel visible at any time.
 

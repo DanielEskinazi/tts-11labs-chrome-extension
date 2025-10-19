@@ -81,7 +81,7 @@ When audio playback ends naturally or is stopped, the control panel should disap
 
 **Acceptance Scenarios**:
 
-1. **Given** audio is playing to the end, **When** audio playback completes naturally, **Then** control panel fades out and disappears within 2 seconds
+1. **Given** audio is playing to the end, **When** audio playback completes naturally, **Then** control panel disappears within 2 seconds (may include optional fade-out animation if implemented)
 2. **Given** audio is stopped via stop button, **When** stop button is clicked, **Then** control panel disappears immediately
 3. **Given** user navigates to a new page while audio plays, **When** page changes, **Then** controls disappear (audio may stop or continue based on extension design)
 
@@ -89,12 +89,12 @@ When audio playback ends naturally or is stopped, the control panel should disap
 
 ### Edge Cases
 
-- What happens when audio ends naturally while controls are visible? → Controls should fade out automatically after 1-2 seconds
+- What happens when audio ends naturally while controls are visible? → Controls should disappear automatically within 2 seconds (with optional fade-out animation if implemented)
 - What happens when user navigates to a new page while audio is playing? → Controls should disappear; audio behavior depends on extension architecture (stop or continue in background)
 - What happens when multiple audio sessions are triggered in quick succession? → New controls replace old controls; only one control panel should be visible at a time
 - How do controls behave on different viewport sizes (mobile vs desktop)? → Controls should scale appropriately and remain visible/accessible on all screen sizes
 - What happens if user triggers TTS while audio is already playing? → Current audio stops, new audio starts, controls update to control new session
-- What if the floating panel overlaps with important page content? → Controls should be draggable or positioned in a corner that minimally interferes with content (bottom-right or bottom-center)
+- What if the floating panel overlaps with important page content? → Controls are positioned in a corner that minimally interferes with content (bottom-right for desktop, bottom-center for mobile) with high z-index to ensure visibility. Draggable controls are out of scope for this version.
 - How do controls work on pages with complex layouts (sticky headers, fixed sidebars)? → Controls should have high z-index and position that avoids conflicts with common page elements
 
 ## Requirements

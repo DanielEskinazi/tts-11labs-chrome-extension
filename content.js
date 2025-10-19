@@ -3,6 +3,23 @@
 
 console.log('ElevenLabs TTS content script loaded');
 
+// Track if audio is playing
+let isAudioPlaying = false;
+
+// Keyboard shortcuts for audio control
+document.addEventListener('keydown', (event) => {
+  // Ctrl+Shift+P = Pause/Resume audio
+  if (event.ctrlKey && event.shiftKey && event.key === 'P') {
+    event.preventDefault();
+    toggleAudioPlayback();
+  }
+  // Ctrl+Shift+S = Stop audio
+  if (event.ctrlKey && event.shiftKey && event.key === 'S') {
+    event.preventDefault();
+    stopAudioPlayback();
+  }
+});
+
 // Listen for messages from background service worker
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Content script received message:', message.type);
@@ -18,6 +35,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     captureSelectedText();
   } else if (message.type === 'SHOW_TOAST') {
     showToast(message.payload);
+  } else if (message.type === 'AUTOPLAY_BLOCKED') {
+    // Show toast with play button for autoplay blocked
+    showToast({
+      message: 'Click to play audio (autoplay blocked)',
+      type: 'warning',
+      action: 'PLAY_AUDIO'
+    });
   } else {
     // T039: Graceful degradation for unknown message types
     console.warn('Unknown message type received:', message.type);
@@ -86,7 +110,7 @@ function captureSelectedText() {
 
 // Show toast notification
 function showToast(config) {
-  const { message, type = 'success' } = config;
+  const { message, type = 'success', action = null } = config;
 
   // Validate message
   if (!message || message.trim().length === 0) {
@@ -150,6 +174,11 @@ function showToast(config) {
           max-width: 400px;
           word-wrap: break-word;
           animation: slideIn 0.3s ease-out;
+          ${action ? 'cursor: pointer;' : ''}
+        }
+
+        .toast:hover {
+          ${action ? 'opacity: 0.9;' : ''}
         }
 
         @keyframes slideIn {
@@ -167,6 +196,26 @@ function showToast(config) {
         ${escapedMessage}
       </div>
     `;
+
+    // Add click handler if action is provided
+    if (action) {
+      const toastElement = shadow.querySelector('.toast');
+      toastElement.addEventListener('click', () => {
+        if (action === 'PLAY_AUDIO') {
+          // Send message to background to resume/play audio
+          chrome.runtime.sendMessage({
+            type: 'RESUME_AUDIO',
+            payload: {},
+            timestamp: Date.now()
+          }).then(response => {
+            console.log('Play audio request sent:', response);
+            container.remove(); // Remove toast after click
+          }).catch(error => {
+            console.error('Failed to send play audio message:', error);
+          });
+        }
+      });
+    }
 
     // Append to page
     document.body.appendChild(container);
@@ -201,6 +250,74 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Toggle audio playback (pause/resume)
+function toggleAudioPlayback() {
+  if (!isAudioPlaying) {
+    console.log('No audio playing to toggle');
+    showToast({
+      message: 'No audio playing',
+      type: 'warning'
+    });
+    return;
+  }
+
+  chrome.runtime.sendMessage({
+    type: 'PAUSE_AUDIO',
+    payload: {},
+    timestamp: Date.now()
+  }).then(response => {
+    if (response.success) {
+      console.log('Audio paused');
+      showToast({
+        message: 'Audio paused (Ctrl+Shift+P to resume)',
+        type: 'success'
+      });
+    } else {
+      // Try resume instead
+      return chrome.runtime.sendMessage({
+        type: 'RESUME_AUDIO',
+        payload: {},
+        timestamp: Date.now()
+      });
+    }
+  }).then(response => {
+    if (response && response.success) {
+      console.log('Audio resumed');
+      showToast({
+        message: 'Audio resumed',
+        type: 'success'
+      });
+    }
+  }).catch(error => {
+    console.error('Failed to toggle audio:', error);
+  });
+}
+
+// Stop audio playback
+function stopAudioPlayback() {
+  if (!isAudioPlaying) {
+    console.log('No audio playing to stop');
+    return;
+  }
+
+  chrome.runtime.sendMessage({
+    type: 'STOP_AUDIO',
+    payload: {},
+    timestamp: Date.now()
+  }).then(response => {
+    if (response.success) {
+      isAudioPlaying = false;
+      console.log('Audio stopped');
+      showToast({
+        message: 'Audio stopped',
+        type: 'success'
+      });
+    }
+  }).catch(error => {
+    console.error('Failed to stop audio:', error);
+  });
+}
+
 // Trigger TTS request to background service worker
 async function triggerTTSRequest(text) {
   try {
@@ -224,9 +341,12 @@ async function triggerTTSRequest(text) {
     if (response.success) {
       console.log('TTS request successful:', response.payload);
 
-      // Show success toast
+      // Track audio is now playing
+      isAudioPlaying = true;
+
+      // Show success toast with controls hint
       showToast({
-        message: 'Audio ready',
+        message: 'Audio ready (Ctrl+Shift+P to pause/resume)',
         type: 'success'
       });
     } else {

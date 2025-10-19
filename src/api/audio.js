@@ -19,6 +19,35 @@ export class AudioPlayer {
     this.status = 'idle'; // idle, loading, playing, paused, error
     this.currentPosition = 0;
     this.duration = 0;
+
+    // Event handlers
+    this.onPlaybackEnd = null;
+    this.onPlaybackError = null;
+    this.onStatusChange = null;
+  }
+
+  /**
+   * Get current playback state
+   * @returns {object} State object with status, position, duration
+   */
+  getState() {
+    return {
+      status: this.status,
+      currentPosition: this.currentPosition,
+      duration: this.duration,
+      hasAudio: this.audio !== null
+    };
+  }
+
+  /**
+   * Update status and trigger callback
+   * @private
+   */
+  _updateStatus(newStatus) {
+    this.status = newStatus;
+    if (this.onStatusChange) {
+      this.onStatusChange(newStatus);
+    }
   }
 
   /**
@@ -27,8 +56,65 @@ export class AudioPlayer {
    * @returns {Promise<void>}
    */
   async loadAudio(audioBlob) {
-    // Implementation in Phase 4 (US2)
-    throw new Error('Not implemented');
+    try {
+      console.log('[AudioPlayer] Starting loadAudio, blob:', audioBlob);
+      this._updateStatus('loading');
+
+      // Clean up any existing audio first
+      this.cleanup();
+
+      // Create blob URL for audio
+      console.log('[AudioPlayer] Creating blob URL...');
+      this.blobUrl = URL.createObjectURL(audioBlob);
+      console.log('[AudioPlayer] Blob URL created:', this.blobUrl);
+
+      // Create audio element
+      console.log('[AudioPlayer] Creating Audio element...');
+      this.audio = new Audio(this.blobUrl);
+      console.log('[AudioPlayer] Audio element created');
+
+      // Set up event listeners
+      return new Promise((resolve, reject) => {
+        this.audio.addEventListener('loadedmetadata', () => {
+          this.duration = this.audio.duration;
+          console.log(`[AudioPlayer] Audio loaded: ${this.duration}s duration`);
+          resolve();
+        });
+
+        this.audio.addEventListener('error', (event) => {
+          console.error('[AudioPlayer] Audio element error event:', event);
+          console.error('[AudioPlayer] Audio error details:', {
+            error: this.audio.error,
+            code: this.audio.error?.code,
+            message: this.audio.error?.message,
+            networkState: this.audio.networkState,
+            readyState: this.audio.readyState
+          });
+          this._updateStatus('error');
+          if (this.onPlaybackError) {
+            this.onPlaybackError(event);
+          }
+          reject(new Error('Failed to load audio'));
+        });
+
+        this.audio.addEventListener('ended', () => {
+          console.log('[AudioPlayer] Audio playback ended');
+          this._updateStatus('idle');
+          if (this.onPlaybackEnd) {
+            this.onPlaybackEnd();
+          }
+        });
+
+        this.audio.addEventListener('timeupdate', () => {
+          this.currentPosition = this.audio.currentTime;
+        });
+      });
+    } catch (error) {
+      console.error('[AudioPlayer] Error in loadAudio:', error);
+      console.error('[AudioPlayer] Error stack:', error.stack);
+      this._updateStatus('error');
+      throw error;
+    }
   }
 
   /**
@@ -36,35 +122,98 @@ export class AudioPlayer {
    * @returns {Promise<void>}
    */
   async play() {
-    // Implementation in Phase 4 (US2)
-    throw new Error('Not implemented');
+    if (!this.audio) {
+      throw new Error('No audio loaded');
+    }
+
+    try {
+      await this.audio.play();
+      this._updateStatus('playing');
+      console.log('Audio playback started');
+    } catch (error) {
+      // Handle autoplay policy blocking
+      if (error.name === 'NotAllowedError') {
+        console.warn('Autoplay blocked by browser policy');
+        throw new Error('AUTOPLAY_BLOCKED');
+      }
+      console.error('Play error:', error);
+      this._updateStatus('error');
+      throw error;
+    }
   }
 
   /**
    * Pause playback
    */
   pause() {
-    // Implementation in Phase 4 (US2)
+    if (!this.audio) {
+      console.warn('No audio to pause');
+      return;
+    }
+
+    if (this.status === 'playing') {
+      this.audio.pause();
+      this._updateStatus('paused');
+      console.log('Audio paused at', this.currentPosition);
+    }
   }
 
   /**
    * Resume playback from paused position
    */
-  resume() {
-    // Implementation in Phase 4 (US2)
+  async resume() {
+    if (!this.audio) {
+      console.warn('No audio to resume');
+      return;
+    }
+
+    if (this.status === 'paused') {
+      try {
+        await this.audio.play();
+        this._updateStatus('playing');
+        console.log('Audio resumed from', this.currentPosition);
+      } catch (error) {
+        console.error('Resume error:', error);
+        this._updateStatus('error');
+        throw error;
+      }
+    }
   }
 
   /**
    * Stop playback and reset position
    */
   stop() {
-    // Implementation in Phase 4 (US2)
+    if (!this.audio) {
+      console.warn('No audio to stop');
+      return;
+    }
+
+    this.audio.pause();
+    this.audio.currentTime = 0;
+    this.currentPosition = 0;
+    this._updateStatus('idle');
+    console.log('Audio stopped');
   }
 
   /**
    * Clean up audio resources
    */
   cleanup() {
-    // Implementation in Phase 4 (US2)
+    if (this.audio) {
+      this.audio.pause();
+      this.audio.src = '';
+      this.audio = null;
+    }
+
+    if (this.blobUrl) {
+      URL.revokeObjectURL(this.blobUrl);
+      this.blobUrl = null;
+    }
+
+    this.currentPosition = 0;
+    this.duration = 0;
+    this._updateStatus('idle');
+    console.log('Audio resources cleaned up');
   }
 }

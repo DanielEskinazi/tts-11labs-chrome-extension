@@ -82,25 +82,25 @@ description: "Task list for ElevenLabs API Integration feature implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create AudioPlayer class in src/api/audio.js (constructor, state management: idle/loading/playing/paused/error)
-- [ ] T021 [P] [US2] Implement loadAudio method in src/api/audio.js (create Audio element from blob URL, handle load events)
-- [ ] T022 [US2] Implement play method in src/api/audio.js (play audio, detect autoplay blocks, return promise)
-- [ ] T023 [US2] Implement pause method in src/api/audio.js (pause playback, store current position)
-- [ ] T024 [US2] Implement resume method in src/api/audio.js (resume from paused position)
-- [ ] T025 [US2] Implement stop method in src/api/audio.js (stop playback, reset position)
-- [ ] T026 [US2] Implement cleanup method in src/api/audio.js (release blob URL, remove audio element, reset state)
-- [ ] T027 [US2] Add playback state tracking in src/api/audio.js (current position, duration, status)
-- [ ] T028 [US2] Update background.js to create AudioPlayer instance when audio is received
-- [ ] T029 [US2] Implement automatic playback in background.js (call audioPlayer.play() when audio loads)
-- [ ] T030 [US2] Add browser autoplay policy detection in background.js (catch play() promise rejection)
-- [ ] T031 [US2] Send AUTOPLAY_BLOCKED message from background.js to content.js when play() promise rejects (include play button action)
-- [ ] T032 [US2] Add message handler for PAUSE_AUDIO in background.js (call audioPlayer.pause())
-- [ ] T033 [US2] Add message handler for RESUME_AUDIO in background.js (call audioPlayer.resume())
-- [ ] T034 [US2] Add message handler for STOP_AUDIO in background.js (call audioPlayer.stop() and cleanup())
-- [ ] T035 [US2] Update background.js to stop current audio when new TTS request starts (cancel playback, cleanup resources)
-- [ ] T036 [US2] Add audio completion listener in background.js (cleanup when audio ends naturally)
-- [ ] T037 [US2] Update content.js to show play button in toast if autoplay blocked (send PLAY_AUDIO message on click)
-- [ ] T038 [US2] Add pause/resume UI controls in content.js (simple button or icon in toast/popup)
+- [X] T020 [P] [US2] Create AudioPlayer class in src/api/audio.js (constructor, state management: idle/loading/playing/paused/error)
+- [X] T021 [P] [US2] Implement loadAudio method in src/api/audio.js (create Audio element from blob URL, handle load events)
+- [X] T022 [US2] Implement play method in src/api/audio.js (play audio, detect autoplay blocks, return promise)
+- [X] T023 [US2] Implement pause method in src/api/audio.js (pause playback, store current position)
+- [X] T024 [US2] Implement resume method in src/api/audio.js (resume from paused position)
+- [X] T025 [US2] Implement stop method in src/api/audio.js (stop playback, reset position)
+- [X] T026 [US2] Implement cleanup method in src/api/audio.js (release blob URL, remove audio element, reset state)
+- [X] T027 [US2] Add playback state tracking in src/api/audio.js (current position, duration, status)
+- [X] T028 [US2] Update background.js to create AudioPlayer instance when audio is received
+- [X] T029 [US2] Implement automatic playback in background.js (call audioPlayer.play() when audio loads)
+- [X] T030 [US2] Add browser autoplay policy detection in background.js (catch play() promise rejection)
+- [X] T031 [US2] Send AUTOPLAY_BLOCKED message from background.js to content.js when play() promise rejects (include play button action)
+- [X] T032 [US2] Add message handler for PAUSE_AUDIO in background.js (call audioPlayer.pause())
+- [X] T033 [US2] Add message handler for RESUME_AUDIO in background.js (call audioPlayer.resume())
+- [X] T034 [US2] Add message handler for STOP_AUDIO in background.js (call audioPlayer.stop() and cleanup())
+- [X] T035 [US2] Update background.js to stop current audio when new TTS request starts (cancel playback, cleanup resources)
+- [X] T036 [US2] Add audio completion listener in background.js (cleanup when audio ends naturally)
+- [X] T037 [US2] Update content.js to show play button in toast if autoplay blocked (send PLAY_AUDIO message on click)
+- [X] T038 [US2] Add pause/resume UI controls in content.js (simple button or icon in toast/popup)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - audio plays automatically with pause/resume controls
 

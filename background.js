@@ -9,8 +9,57 @@ import { mapApiErrorToUserMessage } from './src/utils/errors.js';
 // In-memory cache for captured text (fast access during active period)
 let capturedTextCache = null;
 
+// Helper function to convert ArrayBuffer to base64
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 // Service worker startup log
 console.log('Background service worker started');
+
+// Offscreen document management
+async function setupOffscreenDocument() {
+  // Check if offscreen document already exists
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [chrome.runtime.getURL('offscreen.html')]
+  });
+
+  if (existingContexts.length > 0) {
+    console.log('Offscreen document already exists');
+    return;
+  }
+
+  // Create offscreen document
+  await chrome.offscreen.createDocument({
+    url: 'offscreen.html',
+    reasons: ['AUDIO_PLAYBACK'],
+    justification: 'Playing text-to-speech audio from ElevenLabs API'
+  });
+
+  console.log('Offscreen document created for audio playback');
+}
+
+async function closeOffscreenDocument() {
+  // Check if offscreen document exists
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [chrome.runtime.getURL('offscreen.html')]
+  });
+
+  if (existingContexts.length === 0) {
+    return;
+  }
+
+  // Close offscreen document
+  await chrome.offscreen.closeDocument();
+  console.log('Offscreen document closed');
+}
 
 // Initialize extension: create context menu
 chrome.runtime.onInstalled.addListener(() => {
@@ -66,6 +115,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(result => sendResponse({ success: true, payload: result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true; // Async response
+  } else if (message.type === 'PAUSE_AUDIO') {
+    // Forward to offscreen document
+    chrome.runtime.sendMessage({
+      type: 'PAUSE_AUDIO',
+      payload: {},
+      timestamp: Date.now()
+    })
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'RESUME_AUDIO') {
+    // Forward to offscreen document
+    chrome.runtime.sendMessage({
+      type: 'RESUME_AUDIO',
+      payload: {},
+      timestamp: Date.now()
+    })
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'STOP_AUDIO') {
+    // Forward to offscreen document
+    chrome.runtime.sendMessage({
+      type: 'STOP_AUDIO',
+      payload: {},
+      timestamp: Date.now()
+    })
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'AUDIO_PLAYBACK_ENDED') {
+    // Audio playback completed in offscreen document
+    console.log('Audio playback completed');
+    sendResponse({ success: true });
+    return false;
+  } else if (message.type === 'AUDIO_PLAYBACK_ERROR') {
+    // Audio playback error in offscreen document
+    console.error('Audio playback error from offscreen:', message.payload?.error);
+    sendResponse({ success: true });
+    return false;
   } else {
     // T039: Graceful degradation for unknown message types
     console.warn('Unknown message type received:', message.type);
@@ -182,10 +271,63 @@ async function handleTTSRequest(payload, tabId) {
     const responseTime = Date.now() - startTime;
     console.log(`TTS API request successful in ${responseTime}ms, audio size: ${audioBlob.size} bytes`);
 
-    // Return audio blob (will be sent back to content script)
+    // Ensure offscreen document exists
+    await setupOffscreenDocument();
+
+    // Convert blob to base64 for safe messaging
+    const audioArrayBuffer = await audioBlob.arrayBuffer();
+    const audioBase64 = arrayBufferToBase64(audioArrayBuffer);
+    console.log(`Audio converted to base64: ${audioBase64.length} characters`);
+
+    // Send audio to offscreen document to load
+    const loadResult = await chrome.runtime.sendMessage({
+      type: 'LOAD_AUDIO',
+      payload: {
+        audioData: audioBase64,
+        format: 'base64'
+      },
+      timestamp: Date.now()
+    });
+
+    if (!loadResult.success) {
+      throw new Error(loadResult.error || 'Failed to load audio in offscreen document');
+    }
+
+    console.log('Audio loaded in offscreen document');
+
+    // Automatically start playback
+    try {
+      const playResult = await chrome.runtime.sendMessage({
+        type: 'PLAY_AUDIO',
+        payload: {},
+        timestamp: Date.now()
+      });
+
+      if (!playResult.success) {
+        throw new Error(playResult.error || 'Failed to play audio');
+      }
+
+      console.log('Automatic playback started in offscreen document');
+    } catch (playError) {
+      // Handle autoplay blocking
+      if (playError.message && playError.message.includes('AUTOPLAY_BLOCKED')) {
+        console.warn('Autoplay blocked - user interaction required');
+        // Send message to content script about autoplay block
+        chrome.tabs.sendMessage(tabId, {
+          type: 'AUTOPLAY_BLOCKED',
+          payload: {},
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to send AUTOPLAY_BLOCKED message:', err));
+      } else {
+        throw playError;
+      }
+    }
+
+    // Return success (audio is now loaded and playing)
     return {
-      audioBlob: audioBlob,
-      responseTime: responseTime
+      success: true,
+      responseTime: responseTime,
+      audioSize: audioBlob.size
     };
 
   } catch (error) {

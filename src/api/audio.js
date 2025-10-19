@@ -211,6 +211,33 @@ export class AudioPlayer {
   }
 
   /**
+   * Set playback speed
+   * @param {number} rate - Playback speed (0.5 - 2.0)
+   * @returns {boolean} Success status
+   */
+  setPlaybackSpeed(rate) {
+    // Validate rate
+    if (typeof rate !== 'number' || rate < 0.5 || rate > 2.0) {
+      console.error('[AudioPlayer] Invalid playback rate:', rate);
+      return false;
+    }
+
+    if (!this.audio) {
+      console.warn('[AudioPlayer] No audio element to set speed on');
+      return false;
+    }
+
+    try {
+      this.audio.playbackRate = rate;
+      console.log(`[AudioPlayer] Playback speed set to ${rate}x`);
+      return true;
+    } catch (error) {
+      console.error('[AudioPlayer] Failed to set playback rate:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clean up audio resources
    */
   cleanup() {

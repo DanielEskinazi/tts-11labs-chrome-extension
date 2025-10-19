@@ -49,6 +49,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
       return false;
 
+    case 'SET_PLAYBACK_SPEED':
+      if (audioPlayer) {
+        const success = audioPlayer.setPlaybackSpeed(message.payload.speed);
+        sendResponse({ success, appliedSpeed: success ? message.payload.speed : null });
+      } else {
+        sendResponse({ success: false, error: 'No audio player' });
+      }
+      return false;
+
     case 'GET_AUDIO_STATE':
       const state = getAudioState();
       sendResponse({ success: true, payload: state });

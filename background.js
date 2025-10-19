@@ -189,6 +189,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true; // Async response
+  } else if (message.type === 'CONTROL_SPEED_CHANGED') {
+    // Validate speed value
+    const { speed } = message.payload;
+
+    if (typeof speed !== 'number' || speed < 0.5 || speed > 2.0) {
+      sendResponse({ success: false, error: 'Invalid speed value (must be 0.5-2.0)' });
+      return false;
+    }
+
+    console.log('Control speed changed to', speed, 'forwarding to offscreen');
+
+    // Forward to offscreen document
+    chrome.runtime.sendMessage({
+      type: 'SET_PLAYBACK_SPEED',
+      payload: { speed },
+      timestamp: Date.now()
+    })
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
   } else if (message.type === 'AUDIO_STATE_CHANGED') {
     // Audio state changed in offscreen document - relay to content script
     const { status, currentPosition, duration } = message.payload;

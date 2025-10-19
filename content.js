@@ -11,6 +11,9 @@ let controlPanelContainer = null;
 let controlPanelShadow = null;
 let isActionPending = false;
 
+// Speed control constants
+const SPEED_PRESETS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
 // Keyboard shortcuts for audio control
 document.addEventListener('keydown', (event) => {
   // Ctrl+Shift+P = Pause/Resume audio
@@ -484,6 +487,72 @@ function showControlPanel() {
           }
         }
 
+        /* Speed control styles */
+        .speed-control {
+          position: relative;
+        }
+
+        .speed-toggle {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 8px 12px;
+          width: auto;
+          height: 44px;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .speed-toggle .arrow {
+          font-size: 10px;
+          transition: transform 0.2s;
+        }
+
+        .speed-toggle[aria-expanded="true"] .arrow {
+          transform: rotate(180deg);
+        }
+
+        .speed-menu {
+          position: absolute;
+          bottom: 100%;
+          right: 0;
+          margin-bottom: 8px;
+          background: rgba(0, 0, 0, 0.95);
+          border-radius: 8px;
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          z-index: 2147483648;
+        }
+
+        .speed-menu.hidden {
+          display: none;
+        }
+
+        .speed-preset {
+          width: 100%;
+          padding: 8px 16px;
+          text-align: left;
+          background: transparent;
+          border: none;
+          color: white;
+          cursor: pointer;
+          border-radius: 4px;
+          font-size: 14px;
+          transition: background 0.2s;
+        }
+
+        .speed-preset:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .speed-preset.active {
+          background: rgba(255, 255, 255, 0.2);
+          font-weight: bold;
+        }
+
         /* Mobile responsive */
         @media (max-width: 768px) {
           .control-panel {
@@ -494,11 +563,36 @@ function showControlPanel() {
             padding: 10px 14px;
             gap: 10px;
           }
+
+          .speed-toggle {
+            padding: 8px 10px;
+            font-size: 13px;
+          }
+
+          .speed-preset {
+            padding: 10px 16px;
+            font-size: 15px;
+          }
         }
       </style>
       <div class="control-panel" role="region" aria-label="Audio playback controls">
         <button id="pause-btn" aria-label="Pause">⏸</button>
         <button id="stop-btn" aria-label="Stop">⏹</button>
+        <div class="speed-control">
+          <button id="speed-toggle" class="speed-toggle" aria-label="Playback speed" aria-haspopup="true" aria-expanded="false">
+            <span id="speed-current">1x</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div id="speed-menu" class="speed-menu hidden" role="menu">
+            <button class="speed-preset" data-speed="0.5" role="menuitem">0.5x</button>
+            <button class="speed-preset" data-speed="0.75" role="menuitem">0.75x</button>
+            <button class="speed-preset active" data-speed="1.0" role="menuitem">1x</button>
+            <button class="speed-preset" data-speed="1.25" role="menuitem">1.25x</button>
+            <button class="speed-preset" data-speed="1.5" role="menuitem">1.5x</button>
+            <button class="speed-preset" data-speed="1.75" role="menuitem">1.75x</button>
+            <button class="speed-preset" data-speed="2.0" role="menuitem">2x</button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -508,6 +602,37 @@ function showControlPanel() {
 
     pauseBtn.addEventListener('click', handleControlPauseClicked);
     stopBtn.addEventListener('click', handleControlStopClicked);
+
+    // Attach speed control event listeners
+    const speedToggle = controlPanelShadow.querySelector('#speed-toggle');
+    const speedMenu = controlPanelShadow.querySelector('#speed-menu');
+    const speedPresets = controlPanelShadow.querySelectorAll('.speed-preset');
+
+    // Toggle dropdown
+    speedToggle.addEventListener('click', () => {
+      const isHidden = speedMenu.classList.toggle('hidden');
+      speedToggle.setAttribute('aria-expanded', !isHidden);
+    });
+
+    // Handle preset clicks
+    speedPresets.forEach(preset => {
+      preset.addEventListener('click', async () => {
+        const speed = parseFloat(preset.dataset.speed);
+        await handleSpeedChange(speed);
+
+        // Close dropdown
+        speedMenu.classList.add('hidden');
+        speedToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Close dropdown when clicking outside (attach to document, not shadow)
+    document.addEventListener('click', (e) => {
+      if (!controlPanelContainer.contains(e.target)) {
+        speedMenu.classList.add('hidden');
+        speedToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
 
     // Append to page
     document.body.appendChild(controlPanelContainer);
@@ -672,4 +797,71 @@ function updateButtonState(newState) {
   } else {
     console.warn('Unknown button state:', newState);
   }
+}
+
+/**
+ * Handle speed change from preset button click
+ * @param {number} newSpeed - The new playback speed (0.5-2.0)
+ */
+async function handleSpeedChange(newSpeed) {
+  console.log('Speed preset clicked:', newSpeed);
+
+  // Prevent rapid clicking
+  if (isActionPending) {
+    console.log('Control action already pending, ignoring speed change');
+    return;
+  }
+
+  isActionPending = true;
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'CONTROL_SPEED_CHANGED',
+      payload: { speed: newSpeed },
+      timestamp: Date.now()
+    });
+
+    if (response.success) {
+      updateSpeedUI(newSpeed);
+    } else {
+      console.error('Speed change failed:', response.error);
+    }
+  } catch (error) {
+    console.error('Failed to send speed change message:', error);
+  } finally {
+    isActionPending = false;
+  }
+}
+
+/**
+ * Update speed UI (toggle button display and active preset)
+ * @param {number} speed - Current speed (0.5-2.0)
+ */
+function updateSpeedUI(speed) {
+  if (!controlPanelShadow) {
+    console.warn('No control panel shadow DOM to update speed UI');
+    return;
+  }
+
+  const speedCurrent = controlPanelShadow.querySelector('#speed-current');
+  const speedPresets = controlPanelShadow.querySelectorAll('.speed-preset');
+
+  if (!speedCurrent) {
+    console.error('Speed current element not found in shadow DOM');
+    return;
+  }
+
+  // Update toggle button text
+  speedCurrent.textContent = `${speed}x`;
+
+  // Update active preset
+  speedPresets.forEach(preset => {
+    if (parseFloat(preset.dataset.speed) === speed) {
+      preset.classList.add('active');
+    } else {
+      preset.classList.remove('active');
+    }
+  });
+
+  console.log('Speed UI updated to', speed);
 }

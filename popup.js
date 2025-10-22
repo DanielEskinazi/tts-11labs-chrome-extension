@@ -16,9 +16,17 @@ const STORAGE_KEY = 'elevenlabs_api_key_config';
 const API_KEY_REGEX = /^[a-fA-F0-9]{64}$/;
 
 // Initialize popup on load
-document.addEventListener('DOMContentLoaded', () => {
-  loadApiKey();
-  initializeVoiceSelector();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadApiKey();
+  // Only initialize voices if API key is configured
+  const hasApiKey = await checkApiKeyExists();
+  if (hasApiKey) {
+    initializeVoiceSelector();
+  } else {
+    // Show helpful message instead of error
+    voiceError.textContent = 'Configure API key above to select voices.';
+    voiceError.classList.remove('hidden');
+  }
 });
 
 // Form submit handler
@@ -33,23 +41,40 @@ clearButton.addEventListener('click', () => {
 });
 
 /**
+ * Check if API key exists in storage
+ * @returns {Promise<boolean>}
+ */
+async function checkApiKeyExists() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEY], (result) => {
+      const config = result[STORAGE_KEY];
+      resolve(config && config.apiKey ? true : false);
+    });
+  });
+}
+
+/**
  * Load API key from storage and update UI
  */
 function loadApiKey() {
-  chrome.storage.local.get([STORAGE_KEY], (result) => {
-    if (chrome.runtime.lastError) {
-      showError('Failed to load API key: ' + chrome.runtime.lastError.message);
-      updateStatus(false);
-      return;
-    }
+  return new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        showError('Failed to load API key: ' + chrome.runtime.lastError.message);
+        updateStatus(false);
+        resolve();
+        return;
+      }
 
-    const config = result[STORAGE_KEY];
-    if (config && config.apiKey) {
-      input.value = maskApiKey(config.apiKey);
-      updateStatus(true);
-    } else {
-      updateStatus(false);
-    }
+      const config = result[STORAGE_KEY];
+      if (config && config.apiKey) {
+        input.value = maskApiKey(config.apiKey);
+        updateStatus(true);
+      } else {
+        updateStatus(false);
+      }
+      resolve();
+    });
   });
 }
 
@@ -90,6 +115,9 @@ function saveApiKey() {
       input.value = maskApiKey(config.apiKey);
       updateStatus(true);
       hideError();
+
+      // Initialize voice selector now that we have an API key
+      initializeVoiceSelector();
     });
   });
 }
@@ -107,6 +135,13 @@ function clearApiKey() {
     input.value = '';
     updateStatus(false);
     hideError();
+
+    // Reset voice selector
+    voiceSelect.innerHTML = '<option value="">Loading voices...</option>';
+    voiceSelect.disabled = true;
+    previewButton.disabled = true;
+    voiceError.textContent = 'Configure API key above to select voices.';
+    voiceError.classList.remove('hidden');
   });
 }
 

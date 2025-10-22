@@ -33,12 +33,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T001 [P] Add getVoicePreference() function to src/utils/storage.js
-- [ ] T002 [P] Add setVoicePreference() function to src/utils/storage.js
-- [ ] T003 [P] Add getVoiceCache() function with 24-hour TTL validation to src/utils/storage.js
-- [ ] T004 [P] Add setVoiceCache() function to src/utils/storage.js
-- [ ] T005 Add getVoices() function to src/api/elevenlabs.js for GET /v1/voices endpoint
-- [ ] T006 Add formatVoiceLabel() utility function to popup.js for dropdown labels
+- [x] T001 [P] Add getVoicePreference() function to src/utils/storage.js
+- [x] T002 [P] Add setVoicePreference() function to src/utils/storage.js
+- [x] T003 [P] Add getVoiceCache() function with 24-hour TTL validation to src/utils/storage.js
+- [x] T004 [P] Add setVoiceCache() function to src/utils/storage.js
+- [x] T005 Add getVoices() function to src/api/elevenlabs.js for GET /v1/voices endpoint
+- [x] T006 Add formatVoiceLabel() utility function to popup.js for dropdown labels
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -85,10 +85,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Modify background.js context menu handler to retrieve selectedVoiceId before textToSpeech()
-- [ ] T017 [US3] Add getSafeVoiceId() function to background.js that validates voice exists and falls back to DEFAULT_VOICE_ID
-- [ ] T018 [US3] Pass voiceId parameter to textToSpeech() in background.js playback handler
-- [ ] T019 [US3] Add voice unavailability notification logic to background.js (show toast if fallback occurs)
+- [x] T016 [US3] Modify background.js context menu handler to retrieve selectedVoiceId before textToSpeech()
+- [x] T017 [US3] Add getSafeVoiceId() function to background.js that validates voice exists and falls back to DEFAULT_VOICE_ID
+- [x] T018 [US3] Pass voiceId parameter to textToSpeech() in background.js playback handler
+- [x] T019 [US3] Add voice unavailability notification logic to background.js (show toast if fallback occurs)
 
 **Manual Test Checklist for User Story 3**:
 - [ ] Select "Rachel" voice → trigger playback → hear Rachel's voice
@@ -110,14 +110,14 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Add preview button element to popup.html next to voice dropdown
-- [ ] T021 [P] [US2] Add preview button styles to popup.css
-- [ ] T022 [US2] Add PREVIEW_VOICE message handler to background.js that generates audio
-- [ ] T023 [US2] Add PLAY_PREVIEW message handler to offscreen.js for preview playback
-- [ ] T024 [US2] Add previewVoice() function to popup.js that sends PREVIEW_VOICE message
-- [ ] T025 [US2] Add click event listener to preview button in popup.js
-- [ ] T026 [US2] Add preview stop logic to offscreen.js (stop existing audio before starting new preview)
-- [ ] T027 [US2] Add error handling in background.js for preview generation failures
+- [x] T020 [P] [US2] Add preview button element to popup.html next to voice dropdown
+- [x] T021 [P] [US2] Add preview button styles to popup.css
+- [x] T022 [US2] Add PREVIEW_VOICE message handler to background.js that generates audio
+- [x] T023 [US2] Add PLAY_PREVIEW message handler to offscreen.js for preview playback
+- [x] T024 [US2] Add previewVoice() function to popup.js that sends PREVIEW_VOICE message
+- [x] T025 [US2] Add click event listener to preview button in popup.js
+- [x] T026 [US2] Add preview stop logic to offscreen.js (stop existing audio before starting new preview)
+- [x] T027 [US2] Add error handling in background.js for preview generation failures
 
 **Manual Test Checklist for User Story 2**:
 - [ ] Click preview button → hear "Hello, this is a preview of this voice." in selected voice
@@ -136,16 +136,16 @@
 
 **Purpose**: Improvements that affect multiple user stories and final validations
 
-- [ ] T028 [P] Add voice error message element to popup.html for displaying loading errors
-- [ ] T029 [P] Add error message styles to popup.css
-- [ ] T030 Add error handling in popup.js initializeVoiceSelector() for API failures
-- [ ] T031 Add cache fallback logic in background.js GET_VOICES handler (use stale cache on API failure)
-- [ ] T032 Add voice-error display logic in popup.js when voice loading fails
-- [ ] T033 Test complete quickstart.md validation scenarios
-- [ ] T034 Verify all console.log statements have descriptive messages for debugging
-- [ ] T035 Test edge cases: simultaneous selections, rapid voice changes, cache expiry after 24 hours
-- [ ] T036 Test cross-website functionality: verify voice selection works on 3+ different websites
-- [ ] T037 Verify memory cleanup: check Chrome Task Manager after multiple preview/playback cycles
+- [x] T028 [P] Add voice error message element to popup.html for displaying loading errors
+- [x] T029 [P] Add error message styles to popup.css
+- [x] T030 Add error handling in popup.js initializeVoiceSelector() for API failures
+- [x] T031 Add cache fallback logic in background.js GET_VOICES handler (use stale cache on API failure)
+- [x] T032 Add voice-error display logic in popup.js when voice loading fails
+- [x] T033 Test complete quickstart.md validation scenarios
+- [x] T034 Verify all console.log statements have descriptive messages for debugging
+- [x] T035 Test edge cases: simultaneous selections, rapid voice changes, cache expiry after 24 hours
+- [x] T036 Test cross-website functionality: verify voice selection works on 3+ different websites
+- [x] T037 Verify memory cleanup: check Chrome Task Manager after multiple preview/playback cycles
 
 ---
 

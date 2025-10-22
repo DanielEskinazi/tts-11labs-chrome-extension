@@ -63,6 +63,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true, payload: state });
       return false;
 
+    case 'PLAY_PREVIEW':
+      handlePlayPreview(message.payload)
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true; // Async response
+
     default:
       // Ignore messages not meant for offscreen document (e.g., CONTROL_PAUSE_CLICKED, TEXT_CAPTURED, TTS_REQUEST)
       // These are handled by background.js
@@ -264,4 +270,27 @@ function getAudioState() {
   }
 
   return audioPlayer.getState();
+}
+
+/**
+ * Handle PLAY_PREVIEW message - Stop existing audio and play preview
+ * @param {object} payload - Contains audioData (base64) and format
+ */
+async function handlePlayPreview(payload) {
+  try {
+    // Stop any existing audio first
+    if (audioPlayer && audioPlayer.status === 'playing') {
+      console.log('[Offscreen] Stopping existing audio before preview');
+      audioPlayer.stop();
+    }
+
+    // Load and play the preview audio
+    await handleLoadAudio(payload);
+    await handlePlayAudio();
+
+    console.log('[Offscreen] Preview playback started');
+  } catch (error) {
+    console.error('[Offscreen] Failed to play preview:', error);
+    throw error;
+  }
 }

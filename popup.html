@@ -36,6 +36,19 @@
           <button type="button" id="clear-button" class="secondary">Clear</button>
         </div>
       </form>
+
+      <div class="form-group">
+        <label for="voice-select">Voice</label>
+        <div class="voice-controls">
+          <select id="voice-select" disabled>
+            <option value="">Loading voices...</option>
+          </select>
+          <button type="button" id="preview-button" class="secondary" disabled>
+            Preview
+          </button>
+        </div>
+        <p id="voice-error" class="error hidden"></p>
+      </div>
     </main>
 
     <footer>

@@ -1,5 +1,6 @@
 /logs
 .env
+.claude/data/sessions/
 
 # Node.js / JavaScript
 node_modules/

@@ -1,9 +1,32 @@
 {
   "manifest_version": 3,
   "name": "ElevenLabs Reader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Convert text to speech using ElevenLabs AI voices",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "activeTab",
+    "scripting",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["toast.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "ElevenLabs Reader"

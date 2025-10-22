@@ -1,0 +1,214 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/tts-11labs-chrome-extension/message-schema.json",
+  "title": "Chrome Extension Message Schema",
+  "description": "JSON Schema for messages passed between content script and background service worker in the ElevenLabs TTS Chrome Extension (Phase 2: Text Selection and Context Menu Integration)",
+  "version": "1.0.0",
+  "definitions": {
+    "BaseMessage": {
+      "type": "object",
+      "required": ["type", "timestamp"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Message type identifier (UPPERCASE_WITH_UNDERSCORES convention)",
+          "pattern": "^[A-Z_]+$"
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Unix timestamp in milliseconds when message was created",
+          "minimum": 0
+        },
+        "sender": {
+          "type": "string",
+          "description": "Optional: Component that sent the message (for debugging)",
+          "enum": ["content-script", "service-worker"]
+        }
+      }
+    },
+    "CaptureTextMessage": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseMessage" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "CAPTURE_TEXT"
+            },
+            "payload": {
+              "type": "null",
+              "description": "No payload needed for this message type"
+            }
+          },
+          "required": ["type", "payload", "timestamp"]
+        }
+      ],
+      "description": "Message sent from service worker to content script to trigger text capture. Direction: Service Worker → Content Script"
+    },
+    "TextCapturedMessage": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseMessage" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "TEXT_CAPTURED"
+            },
+            "payload": {
+              "type": "object",
+              "required": ["text", "url", "length"],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "The captured text content (trimmed, UTF-8 encoded)",
+                  "minLength": 1,
+                  "maxLength": 10000
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Full URL of the page where text was selected",
+                  "format": "uri",
+                  "pattern": "^https?://.*",
+                  "maxLength": 2048
+                },
+                "length": {
+                  "type": "integer",
+                  "description": "Number of characters in the captured text",
+                  "minimum": 1,
+                  "maximum": 10000
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "payload", "timestamp"]
+        }
+      ],
+      "description": "Message sent from content script to service worker with captured text data. Direction: Content Script → Service Worker"
+    },
+    "ShowToastMessage": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseMessage" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "SHOW_TOAST"
+            },
+            "payload": {
+              "type": "object",
+              "required": ["message", "type"],
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Toast message text to display (must be HTML-escaped)",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Toast type for styling",
+                  "enum": ["success", "warning", "error"]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "payload", "timestamp"]
+        }
+      ],
+      "description": "Message sent from service worker to content script to display toast notification. Direction: Service Worker → Content Script"
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/definitions/CaptureTextMessage" },
+    { "$ref": "#/definitions/TextCapturedMessage" },
+    { "$ref": "#/definitions/ShowToastMessage" }
+  ],
+  "examples": [
+    {
+      "description": "Example: CAPTURE_TEXT message (service worker → content script)",
+      "message": {
+        "type": "CAPTURE_TEXT",
+        "payload": null,
+        "timestamp": 1729180800000,
+        "sender": "service-worker"
+      }
+    },
+    {
+      "description": "Example: TEXT_CAPTURED message with short text (content script → service worker)",
+      "message": {
+        "type": "TEXT_CAPTURED",
+        "payload": {
+          "text": "The quick brown fox jumps over the lazy dog.",
+          "url": "https://example.com/article",
+          "length": 44
+        },
+        "timestamp": 1729180800100,
+        "sender": "content-script"
+      }
+    },
+    {
+      "description": "Example: TEXT_CAPTURED message with Unicode/emoji (content script → service worker)",
+      "message": {
+        "type": "TEXT_CAPTURED",
+        "payload": {
+          "text": "Hello 世界! 🌍 Testing Unicode support.",
+          "url": "https://blog.example.com/2024/unicode",
+          "length": 35
+        },
+        "timestamp": 1729180850000,
+        "sender": "content-script"
+      }
+    },
+    {
+      "description": "Example: SHOW_TOAST message with success type (service worker → content script)",
+      "message": {
+        "type": "SHOW_TOAST",
+        "payload": {
+          "message": "Text captured: The quick brown fox jumps...",
+          "type": "success"
+        },
+        "timestamp": 1729180800200,
+        "sender": "service-worker"
+      }
+    },
+    {
+      "description": "Example: SHOW_TOAST message with warning type for long text (service worker → content script)",
+      "message": {
+        "type": "SHOW_TOAST",
+        "payload": {
+          "message": "Text is very long (8,450 chars), this may take a while",
+          "type": "warning"
+        },
+        "timestamp": 1729180850200,
+        "sender": "service-worker"
+      }
+    },
+    {
+      "description": "Example: SHOW_TOAST message with error type (service worker → content script)",
+      "message": {
+        "type": "SHOW_TOAST",
+        "payload": {
+          "message": "Failed to capture text. Please try again.",
+          "type": "error"
+        },
+        "timestamp": 1729180900200,
+        "sender": "service-worker"
+      }
+    }
+  ],
+  "notes": {
+    "transport": "Messages are sent using chrome.runtime.sendMessage (content script → service worker) or chrome.tabs.sendMessage (service worker → content script)",
+    "serialization": "All payloads must be JSON-serializable (no functions, circular references, or undefined values)",
+    "validation": "Both sender and receiver should validate message structure using this schema",
+    "errorHandling": {
+      "invalidMessage": "Log warning and ignore message (graceful degradation)",
+      "unknownType": "Log warning and ignore message",
+      "receiverNotAvailable": "chrome.runtime.sendMessage Promise rejects with 'Receiving end does not exist'"
+    },
+    "performance": "Message passing overhead: ~5-10ms per message (same-process IPC)",
+    "security": "Messages cannot be intercepted by page scripts (content script isolation)",
+    "phase": "Phase 2 only uses these 3 message types. Phase 3 will add TTS_REQUEST, TTS_RESPONSE, etc."
+  }
+}

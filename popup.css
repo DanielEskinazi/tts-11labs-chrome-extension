@@ -145,6 +145,8 @@ button.secondary:disabled {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .voice-controls select {
@@ -173,6 +175,13 @@ button.secondary:disabled {
   padding: 8px 16px;
   white-space: nowrap;
   flex: 0 0 auto;
+  min-width: 80px;
+  display: inline-block;
+}
+
+#preview-button {
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 #voice-error {

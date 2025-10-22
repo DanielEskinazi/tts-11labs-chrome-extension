@@ -2,8 +2,8 @@
 // Handles context menu creation, message passing, and captured text storage
 
 // Import API utilities
-import { textToSpeech, validateApiKey, validateTextLength } from './src/api/elevenlabs.js';
-import { getApiKey } from './src/utils/storage.js';
+import { textToSpeech, validateApiKey, validateTextLength, getVoices, DEFAULT_VOICE_ID } from './src/api/elevenlabs.js';
+import { getApiKey, getVoiceCache, setVoiceCache, getVoicePreference } from './src/utils/storage.js';
 import { mapApiErrorToUserMessage } from './src/utils/errors.js';
 
 // In-memory cache for captured text (fast access during active period)
@@ -276,6 +276,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     sendResponse({ success: true });
     return false;
+  } else if (message.type === 'GET_VOICES') {
+    // Handle GET_VOICES request asynchronously
+    handleGetVoices(message.payload)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, voices: [], error: error.message }));
+    return true; // Async response
+  } else if (message.type === 'PREVIEW_VOICE') {
+    // Handle PREVIEW_VOICE request asynchronously
+    handlePreviewVoice(message.payload)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Async response
   } else {
     // T039: Graceful degradation for unknown message types
     console.warn('Unknown message type received:', message.type);
@@ -361,6 +373,41 @@ async function getCapturedText() {
   }
 }
 
+/**
+ * Get safe voice ID with validation and fallback
+ * @param {string|null} selectedVoiceId - User's selected voice ID
+ * @returns {Promise<{voiceId: string, usedFallback: boolean}>} - Safe voice ID and fallback flag
+ */
+async function getSafeVoiceId(selectedVoiceId) {
+  // If no voice selected, use default
+  if (!selectedVoiceId) {
+    console.log('No voice selected, using default voice:', DEFAULT_VOICE_ID);
+    return { voiceId: DEFAULT_VOICE_ID, usedFallback: false };
+  }
+
+  // Check if selected voice exists in cache
+  try {
+    const cache = await getVoiceCache();
+    if (cache && cache.voices && Array.isArray(cache.voices)) {
+      const voiceExists = cache.voices.some(voice => voice.voice_id === selectedVoiceId);
+
+      if (voiceExists) {
+        console.log('Using selected voice:', selectedVoiceId);
+        return { voiceId: selectedVoiceId, usedFallback: false };
+      } else {
+        console.warn('Selected voice not found in cache, falling back to default:', DEFAULT_VOICE_ID);
+        return { voiceId: DEFAULT_VOICE_ID, usedFallback: true };
+      }
+    }
+  } catch (error) {
+    console.error('Failed to validate voice from cache:', error);
+  }
+
+  // If cache check failed, assume selected voice is valid (optimistic)
+  console.log('Cache unavailable, using selected voice optimistically:', selectedVoiceId);
+  return { voiceId: selectedVoiceId, usedFallback: false };
+}
+
 // Handle TTS request from content script
 async function handleTTSRequest(payload, tabId) {
   const startTime = Date.now();
@@ -386,8 +433,26 @@ async function handleTTSRequest(payload, tabId) {
       }
     }
 
-    // Call ElevenLabs API
-    const audioBlob = await textToSpeech(text, apiKey);
+    // Retrieve selected voice preference
+    const selectedVoiceId = await getVoicePreference();
+
+    // Get safe voice ID with validation and fallback
+    const { voiceId, usedFallback } = await getSafeVoiceId(selectedVoiceId);
+
+    // If fallback was used, notify the user
+    if (usedFallback) {
+      chrome.tabs.sendMessage(tabId, {
+        type: 'SHOW_TOAST',
+        payload: {
+          message: 'Selected voice unavailable, using default voice',
+          type: 'warning'
+        },
+        timestamp: Date.now()
+      }).catch(err => console.error('Failed to send voice fallback notification:', err));
+    }
+
+    // Call ElevenLabs API with selected voice
+    const audioBlob = await textToSpeech(text, apiKey, voiceId);
 
     const responseTime = Date.now() - startTime;
     console.log(`TTS API request successful in ${responseTime}ms, audio size: ${audioBlob.size} bytes`);
@@ -484,5 +549,105 @@ async function handleTTSRequest(payload, tabId) {
 
     // Throw error to be caught by message handler
     throw new Error(errorResponse.message);
+  }
+}
+
+/**
+ * Handle GET_VOICES request with caching
+ * @param {object} payload - Request payload with optional forceRefresh flag
+ * @returns {Promise<object>} Response with voices array
+ */
+async function handleGetVoices(payload) {
+  try {
+    // Check cache first (unless force refresh requested)
+    if (!payload?.forceRefresh) {
+      const cache = await getVoiceCache();
+      if (cache && cache.voices) {
+        console.log('Returning cached voices:', cache.voices.length, 'voices');
+        return { success: true, voices: cache.voices };
+      }
+    }
+
+    // Fetch from API
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      return { success: false, voices: [], error: 'API key not configured' };
+    }
+
+    console.log('Fetching voices from API...');
+    const voices = await getVoices(apiKey);
+
+    // Cache the result
+    await setVoiceCache(voices);
+    console.log('Voices fetched and cached:', voices.length, 'voices');
+
+    return { success: true, voices };
+  } catch (error) {
+    console.error('Failed to get voices:', error);
+
+    // Try to use stale cache as fallback
+    const cache = await getVoiceCache();
+    if (cache && cache.voices) {
+      console.log('Using stale cache as fallback');
+      return { success: true, voices: cache.voices };
+    }
+
+    return { success: false, voices: [], error: error.message };
+  }
+}
+
+/**
+ * Handle PREVIEW_VOICE request - Generate and play preview audio
+ * @param {object} payload - Request payload with voiceId and sampleText
+ * @returns {Promise<object>} Response with success status
+ */
+async function handlePreviewVoice(payload) {
+  const { voiceId, sampleText } = payload;
+
+  if (!voiceId || !sampleText) {
+    return { success: false, error: 'Missing voiceId or sampleText' };
+  }
+
+  try {
+    // Get API key
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      return { success: false, error: 'API key not configured' };
+    }
+
+    console.log('Generating preview for voice:', voiceId);
+
+    // Generate audio using ElevenLabs API
+    const audioBlob = await textToSpeech(sampleText, apiKey, voiceId);
+
+    console.log(`Preview audio generated: ${audioBlob.size} bytes`);
+
+    // Ensure offscreen document exists
+    await setupOffscreenDocument();
+
+    // Convert blob to base64 for messaging
+    const audioArrayBuffer = await audioBlob.arrayBuffer();
+    const audioBase64 = arrayBufferToBase64(audioArrayBuffer);
+
+    // Send to offscreen document for playback
+    const playResult = await chrome.runtime.sendMessage({
+      type: 'PLAY_PREVIEW',
+      payload: {
+        audioData: audioBase64,
+        format: 'base64'
+      },
+      timestamp: Date.now()
+    });
+
+    if (!playResult.success) {
+      throw new Error(playResult.error || 'Failed to play preview');
+    }
+
+    console.log('Preview playback started');
+    return { success: true };
+
+  } catch (error) {
+    console.error('Failed to preview voice:', error);
+    return { success: false, error: error.message };
   }
 }

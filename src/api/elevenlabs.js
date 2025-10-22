@@ -77,9 +77,10 @@ export function buildApiRequest(text, apiKey, voiceId = DEFAULT_VOICE_ID) {
  * Convert text to speech using ElevenLabs API
  * @param {string} text - The text to convert
  * @param {string} apiKey - The ElevenLabs API key
+ * @param {string} voiceId - The voice ID to use (defaults to DEFAULT_VOICE_ID)
  * @returns {Promise<Blob>} - Audio data as a blob
  */
-export async function textToSpeech(text, apiKey) {
+export async function textToSpeech(text, apiKey, voiceId = DEFAULT_VOICE_ID) {
   // Cancel any pending requests first
   cancelPendingRequests();
 
@@ -88,7 +89,7 @@ export async function textToSpeech(text, apiKey) {
   const timeoutId = setTimeout(() => activeAbortController.abort(), API_TIMEOUT);
 
   try {
-    const { url, options } = buildApiRequest(text, apiKey);
+    const { url, options } = buildApiRequest(text, apiKey, voiceId);
 
     // Add abort signal to fetch options
     const fetchOptions = {
@@ -117,5 +118,44 @@ export function cancelPendingRequests() {
   if (activeAbortController) {
     activeAbortController.abort();
     activeAbortController = null;
+  }
+}
+
+/**
+ * Get available voices from ElevenLabs API
+ * @param {string} apiKey - The ElevenLabs API key
+ * @returns {Promise<Array>} - Array of voice objects
+ * @throws {Error} - If API request fails
+ */
+export async function getVoices(apiKey) {
+  const url = `${API_BASE_URL}/voices`;
+
+  const headers = {
+    'xi-api-key': apiKey
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Invalid API key');
+      }
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.voices || !Array.isArray(data.voices)) {
+      throw new Error('Invalid response from voices API');
+    }
+
+    return data.voices;
+  } catch (error) {
+    console.error('Failed to fetch voices:', error);
+    throw error;
   }
 }

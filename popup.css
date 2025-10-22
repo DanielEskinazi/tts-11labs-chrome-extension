@@ -135,6 +135,60 @@ button.secondary:hover {
   background-color: #d1d5db;
 }
 
+button.secondary:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.voice-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.voice-controls select {
+  width: 80%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.voice-controls select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.voice-controls select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.voice-controls button {
+  padding: 8px 16px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  min-width: 80px;
+  display: inline-block;
+}
+
+#preview-button {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#voice-error {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
 footer {
   margin-top: 20px;
   padding-top: 16px;

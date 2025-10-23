@@ -6,7 +6,49 @@ import { AudioPlayer } from './src/api/audio.js';
 // Audio player instance
 let audioPlayer = null;
 
+// Progress tracking interval
+let progressInterval = null;
+
 console.log('Offscreen document loaded for audio playback');
+
+/**
+ * Start sending progress updates to content script for highlighting sync
+ * Sends UPDATE_HIGHLIGHT_PROGRESS message every 100ms during playback
+ */
+function startProgressTracking() {
+  // Clear any existing interval first
+  stopProgressTracking();
+
+  progressInterval = setInterval(() => {
+    if (audioPlayer && audioPlayer.status === 'playing') {
+      // Send progress update to content script via background
+      chrome.runtime.sendMessage({
+        type: 'UPDATE_HIGHLIGHT_PROGRESS',
+        payload: {
+          currentTime: audioPlayer.currentPosition * 1000, // Convert seconds to milliseconds
+          timestamp: Date.now()
+        },
+        timestamp: Date.now()
+      }).catch(err => {
+        // Ignore errors if content script isn't listening
+        // This happens when user navigates away or closes tab
+      });
+    }
+  }, 100); // Update every 100ms for smooth highlighting
+
+  console.log('[Offscreen] Progress tracking started');
+}
+
+/**
+ * Stop sending progress updates
+ */
+function stopProgressTracking() {
+  if (progressInterval) {
+    clearInterval(progressInterval);
+    progressInterval = null;
+    console.log('[Offscreen] Progress tracking stopped');
+  }
+}
 
 // Listen for messages from background service worker
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -129,6 +171,20 @@ async function handleLoadAudio(payload) {
       // Set up completion listener
       audioPlayer.onPlaybackEnd = () => {
         console.log('Audio playback completed');
+
+        // Stop progress updates
+        stopProgressTracking();
+
+        // Send PLAYBACK_STOPPED message to content script
+        chrome.runtime.sendMessage({
+          type: 'PLAYBACK_STOPPED',
+          payload: {
+            reason: 'completed',
+            timestamp: Date.now()
+          },
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to send PLAYBACK_STOPPED:', err));
+
         // Notify background script
         chrome.runtime.sendMessage({
           type: 'AUDIO_PLAYBACK_ENDED',
@@ -184,7 +240,7 @@ async function handleLoadAudio(payload) {
 
     console.log('Audio loaded successfully');
     return {
-      duration: audioPlayer.duration,
+      duration: audioPlayer.duration * 1000,  // Convert seconds to milliseconds
       size: audioBlob.size
     };
 
@@ -207,6 +263,9 @@ async function handlePlayAudio() {
   try {
     await audioPlayer.play();
     console.log('Audio playback started');
+
+    // Start sending progress updates for highlighting
+    startProgressTracking();
   } catch (error) {
     console.error('Failed to play audio:', error);
     throw error;
@@ -224,6 +283,19 @@ function handlePauseAudio() {
 
   audioPlayer.pause();
   console.log('Audio paused');
+
+  // Stop progress updates during pause
+  stopProgressTracking();
+
+  // Send PLAYBACK_PAUSED message to content script
+  chrome.runtime.sendMessage({
+    type: 'PLAYBACK_PAUSED',
+    payload: {
+      currentTime: audioPlayer.currentPosition * 1000,
+      timestamp: Date.now()
+    },
+    timestamp: Date.now()
+  }).catch(err => console.error('Failed to send PLAYBACK_PAUSED:', err));
 }
 
 /**
@@ -237,6 +309,19 @@ async function handleResumeAudio() {
   try {
     await audioPlayer.resume();
     console.log('Audio resumed');
+
+    // Resume progress updates
+    startProgressTracking();
+
+    // Send PLAYBACK_RESUMED message to content script
+    chrome.runtime.sendMessage({
+      type: 'PLAYBACK_RESUMED',
+      payload: {
+        currentTime: audioPlayer.currentPosition * 1000,
+        timestamp: Date.now()
+      },
+      timestamp: Date.now()
+    }).catch(err => console.error('Failed to send PLAYBACK_RESUMED:', err));
   } catch (error) {
     console.error('Failed to resume audio:', error);
     throw error;
@@ -254,6 +339,19 @@ function handleStopAudio() {
 
   audioPlayer.stop();
   console.log('Audio stopped');
+
+  // Stop progress updates
+  stopProgressTracking();
+
+  // Send PLAYBACK_STOPPED message to content script
+  chrome.runtime.sendMessage({
+    type: 'PLAYBACK_STOPPED',
+    payload: {
+      reason: 'user',
+      timestamp: Date.now()
+    },
+    timestamp: Date.now()
+  }).catch(err => console.error('Failed to send PLAYBACK_STOPPED:', err));
 }
 
 /**

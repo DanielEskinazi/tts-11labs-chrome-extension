@@ -200,13 +200,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     console.log('Control speed changed to', speed, 'forwarding to offscreen');
 
-    // Forward to offscreen document
+    // Forward to offscreen document to change playback speed
     chrome.runtime.sendMessage({
       type: 'SET_PLAYBACK_SPEED',
       payload: { speed },
       timestamp: Date.now()
     })
-      .then(result => sendResponse(result))
+      .then(async (result) => {
+        // If offscreen speed change succeeded, notify content script to update highlight timings
+        if (result.success && sender.tab?.id) {
+          try {
+            // Get current audio position from offscreen
+            const stateResult = await chrome.runtime.sendMessage({
+              type: 'GET_AUDIO_STATE',
+              payload: {},
+              timestamp: Date.now()
+            });
+
+            const currentTime = stateResult.payload?.currentPosition || 0;
+
+            // Send SPEED_CHANGED message to content script
+            const highlightResult = await chrome.tabs.sendMessage(sender.tab.id, {
+              type: 'SPEED_CHANGED',
+              payload: {
+                newSpeed: speed,
+                currentTime: currentTime,
+                timestamp: Date.now()
+              },
+              timestamp: Date.now()
+            });
+
+            if (highlightResult.success) {
+              console.log('Highlight timings recalculated for new speed');
+            }
+          } catch (error) {
+            console.error('Failed to update highlight timings:', error);
+            // Continue - speed change still succeeded in audio player
+          }
+        }
+
+        sendResponse(result);
+      })
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true; // Async response
   } else if (message.type === 'AUDIO_STATE_CHANGED') {
@@ -274,6 +308,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     });
 
+    sendResponse({ success: true });
+    return false;
+  } else if (message.type === 'UPDATE_HIGHLIGHT_PROGRESS') {
+    // Forward highlight progress updates from offscreen to content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'UPDATE_HIGHLIGHT_PROGRESS',
+          payload: message.payload,
+          timestamp: Date.now()
+        }).catch(err => {
+          // Ignore errors when content script not available (user navigated away)
+        });
+      }
+    });
+    sendResponse({ success: true });
+    return false;
+  } else if (message.type === 'PLAYBACK_STOPPED') {
+    // Forward playback stopped from offscreen to content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'PLAYBACK_STOPPED',
+          payload: message.payload,
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to notify content script:', err));
+      }
+    });
+    sendResponse({ success: true });
+    return false;
+  } else if (message.type === 'PLAYBACK_PAUSED') {
+    // Forward playback paused from offscreen to content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'PLAYBACK_PAUSED',
+          payload: message.payload,
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to notify content script:', err));
+      }
+    });
+    sendResponse({ success: true });
+    return false;
+  } else if (message.type === 'PLAYBACK_RESUMED') {
+    // Forward playback resumed from offscreen to content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs && tabs.length > 0) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'PLAYBACK_RESUMED',
+          payload: message.payload,
+          timestamp: Date.now()
+        }).catch(err => console.error('Failed to notify content script:', err));
+      }
+    });
     sendResponse({ success: true });
     return false;
   } else if (message.type === 'GET_VOICES') {
@@ -503,6 +591,33 @@ async function handleTTSRequest(payload, tabId) {
         },
         timestamp: Date.now()
       }).catch(err => console.error('Failed to send AUDIO_PLAYBACK_STARTED message:', err));
+
+      // Start highlighting with text, audio duration, and playback speed
+      try {
+        // Get current playback speed from storage
+        const speedResult = await chrome.storage.local.get(['playbackSpeed']);
+        const currentSpeed = speedResult.playbackSpeed || 1.0;
+
+        const highlightResponse = await chrome.tabs.sendMessage(tabId, {
+          type: 'START_HIGHLIGHTING',
+          payload: {
+            text: text,
+            audioDuration: loadResult.payload.duration,
+            playbackSpeed: currentSpeed,
+            timestamp: Date.now()
+          },
+          timestamp: Date.now()
+        });
+
+        if (highlightResponse.success) {
+          console.log(`Highlighting started for ${highlightResponse.sentenceCount} sentences`);
+        } else {
+          console.error('Highlighting failed:', highlightResponse.error);
+        }
+      } catch (highlightError) {
+        console.error('Failed to start highlighting:', highlightError);
+        // Continue playback without highlighting (graceful degradation)
+      }
 
     } catch (playError) {
       // Handle autoplay blocking

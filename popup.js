@@ -11,13 +11,18 @@ const voiceSelect = document.getElementById('voice-select');
 const previewButton = document.getElementById('preview-button');
 const voiceError = document.getElementById('voice-error');
 
+// Highlighting toggle element
+const highlightingToggle = document.getElementById('highlighting-toggle');
+
 // Constants
 const STORAGE_KEY = 'elevenlabs_api_key_config';
 const API_KEY_REGEX = /^[a-fA-F0-9]{64}$/;
+const HIGHLIGHTING_KEY = 'highlightingEnabled';
 
 // Initialize popup on load
 document.addEventListener('DOMContentLoaded', async () => {
   await loadApiKey();
+  await loadHighlightingPreference();
   // Only initialize voices if API key is configured
   const hasApiKey = await checkApiKeyExists();
   if (hasApiKey) {
@@ -38,6 +43,11 @@ form.addEventListener('submit', (e) => {
 // Clear button handler
 clearButton.addEventListener('click', () => {
   clearApiKey();
+});
+
+// Highlighting toggle handler
+highlightingToggle.addEventListener('change', () => {
+  saveHighlightingPreference();
 });
 
 /**
@@ -320,3 +330,31 @@ function previewVoice() {
 // Event listeners for voice selection
 voiceSelect.addEventListener('change', saveVoiceSelection);
 previewButton.addEventListener('click', previewVoice);
+
+/**
+ * Load highlighting preference from storage
+ */
+async function loadHighlightingPreference() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([HIGHLIGHTING_KEY], (result) => {
+      // Default to enabled if not set
+      const isEnabled = result[HIGHLIGHTING_KEY] !== undefined ? result[HIGHLIGHTING_KEY] : true;
+      highlightingToggle.checked = isEnabled;
+      console.log('Highlighting preference loaded:', isEnabled);
+      resolve();
+    });
+  });
+}
+
+/**
+ * Save highlighting preference to storage
+ */
+function saveHighlightingPreference() {
+  const isEnabled = highlightingToggle.checked;
+
+  chrome.storage.local.set({
+    [HIGHLIGHTING_KEY]: isEnabled
+  }, () => {
+    console.log('Highlighting preference saved:', isEnabled);
+  });
+}

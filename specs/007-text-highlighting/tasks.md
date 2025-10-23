@@ -34,10 +34,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T001 [P] Create splitIntoSentences() function in src/utils/textUtils.js using regex /[.!?]+\s+/g
-- [ ] T002 [P] Create calculateSentenceTimings() function in src/utils/textUtils.js for proportional timing
-- [ ] T003 [P] Add CSS highlight styles injection function in content.js (.tts-highlight class)
-- [ ] T004 Add HighlightState initialization in content.js with all entity fields from data-model.md
+- [X] T001 [P] Create splitIntoSentences() function in src/utils/textUtils.js using regex /[.!?]+\s+/g
+- [X] T002 [P] Create calculateSentenceTimings() function in src/utils/textUtils.js for proportional timing
+- [X] T003 [P] Add CSS highlight styles injection function in content.js (.tts-highlight class)
+- [X] T004 Add HighlightState initialization in content.js with all entity fields from data-model.md
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -51,18 +51,18 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Add highlightSentence() function in content.js that wraps text in <span> with highlight class
-- [ ] T006 [P] [US1] Add removeHighlight() function in content.js that unwraps span and restores original text
-- [ ] T007 [US1] Add START_HIGHLIGHTING message handler in content.js that parses sentences and initializes timings
-- [ ] T008 [US1] Add UPDATE_HIGHLIGHT_PROGRESS message handler in content.js that checks current time vs sentence timings
-- [ ] T009 [US1] Add PLAYBACK_STOPPED message handler in content.js that calls cleanupHighlights()
-- [ ] T010 [US1] Add PLAYBACK_PAUSED message handler in content.js that preserves current highlight
-- [ ] T011 [US1] Add PLAYBACK_RESUMED message handler in content.js that continues highlighting
-- [ ] T012 [US1] Modify background.js context menu handler to send START_HIGHLIGHTING message with text, audioDuration, playbackSpeed
-- [ ] T013 [US1] Modify offscreen.js audio playback to send UPDATE_HIGHLIGHT_PROGRESS every 100ms during playback
-- [ ] T014 [US1] Modify offscreen.js pause event to send PLAYBACK_PAUSED message
-- [ ] T015 [US1] Modify offscreen.js resume/play event to send PLAYBACK_RESUMED message
-- [ ] T016 [US1] Modify offscreen.js stop/ended event to send PLAYBACK_STOPPED message
+- [X] T005 [P] [US1] Add highlightSentence() function in content.js that wraps text in <span> with highlight class
+- [X] T006 [P] [US1] Add removeHighlight() function in content.js that unwraps span and restores original text
+- [X] T007 [US1] Add START_HIGHLIGHTING message handler in content.js that parses sentences and initializes timings
+- [X] T008 [US1] Add UPDATE_HIGHLIGHT_PROGRESS message handler in content.js that checks current time vs sentence timings
+- [X] T009 [US1] Add PLAYBACK_STOPPED message handler in content.js that calls cleanupHighlights()
+- [X] T010 [US1] Add PLAYBACK_PAUSED message handler in content.js that preserves current highlight
+- [X] T011 [US1] Add PLAYBACK_RESUMED message handler in content.js that continues highlighting
+- [X] T012 [US1] Modify background.js context menu handler to send START_HIGHLIGHTING message with text, audioDuration, playbackSpeed
+- [X] T013 [US1] Modify offscreen.js audio playback to send UPDATE_HIGHLIGHT_PROGRESS every 100ms during playback
+- [X] T014 [US1] Modify offscreen.js pause event to send PLAYBACK_PAUSED message
+- [X] T015 [US1] Modify offscreen.js resume/play event to send PLAYBACK_RESUMED message
+- [X] T016 [US1] Modify offscreen.js stop/ended event to send PLAYBACK_STOPPED message
 
 **Manual Test Checklist for User Story 1**:
 - [ ] Select text with 3+ sentences → right-click "Read Aloud" → first sentence highlights immediately
@@ -85,10 +85,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T017 [P] [US2] Add scrollToHighlightIfNeeded() function in content.js using element.scrollIntoView()
-- [ ] T018 [P] [US2] Add isElementInViewport() helper function in content.js to check visibility
-- [ ] T019 [US2] Modify highlightSentence() in content.js to call scrollToHighlightIfNeeded() after creating highlight
-- [ ] T020 [US2] Configure scrollIntoView with behavior: 'smooth', block: 'center' for optimal positioning
+- [X] T017 [P] [US2] Add scrollToHighlightIfNeeded() function in content.js using element.scrollIntoView()
+- [X] T018 [P] [US2] Add isElementInViewport() helper function in content.js to check visibility
+- [X] T019 [US2] Modify highlightSentence() in content.js to call scrollToHighlightIfNeeded() after creating highlight
+- [X] T020 [US2] Configure scrollIntoView with behavior: 'smooth', block: 'center' for optimal positioning
 
 **Manual Test Checklist for User Story 2**:
 - [ ] Select long passage (10+ sentences) spanning multiple screens
@@ -110,10 +110,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [P] [US3] Add SPEED_CHANGED message handler in content.js
-- [ ] T022 [US3] Implement timing recalculation logic in SPEED_CHANGED handler using calculateSentenceTimings()
-- [ ] T023 [US3] Modify background.js speed change handler to send SPEED_CHANGED message to content script
-- [ ] T024 [US3] Add currentTime parameter to SPEED_CHANGED message for accurate resync after recalculation
+- [X] T021 [P] [US3] Add SPEED_CHANGED message handler in content.js
+- [X] T022 [US3] Implement timing recalculation logic in SPEED_CHANGED handler using calculateSentenceTimings()
+- [X] T023 [US3] Modify background.js speed change handler to send SPEED_CHANGED message to content script
+- [X] T024 [US3] Add currentTime parameter to SPEED_CHANGED message for accurate resync after recalculation
 
 **Manual Test Checklist for User Story 3**:
 - [ ] Start playback at 1x speed → verify normal highlighting progression
@@ -131,14 +131,14 @@
 
 **Purpose**: Improvements that affect multiple user stories and final validations
 
-- [ ] T025 [P] Add error handling in content.js for DOM mutation scenarios (graceful degradation)
-- [ ] T026 [P] Add defensive checks in highlightSentence() for invalid sentence indices
+- [X] T025 [P] Add error handling in content.js for DOM mutation scenarios (graceful degradation)
+- [X] T026 [P] Add defensive checks in highlightSentence() for invalid sentence indices
 - [ ] T027 Add memory cleanup verification: test 20+ playback cycles and check Chrome Task Manager
 - [ ] T028 Add performance optimization: implement sentence windowing for passages >100 sentences
 - [ ] T029 Test edge cases: very short sentences (1-2 words), very long sentences (100+ words)
 - [ ] T030 Test cross-website compatibility: news sites, documentation, blogs (3+ different sites)
-- [ ] T031 Add console logging for debugging: highlight start/stop, sentence transitions, timing calculations
-- [ ] T032 Verify cleanupHighlights() properly unwraps all spans and restores original DOM
+- [X] T031 Add console logging for debugging: highlight start/stop, sentence transitions, timing calculations
+- [X] T032 Verify cleanupHighlights() properly unwraps all spans and restores original DOM
 - [ ] T033 Test with dynamic content: pages that modify DOM during playback
 - [ ] T034 Run all manual test checklists from quickstart.md
 - [ ] T035 Validate message contracts: verify all 6 message types send/receive correctly
